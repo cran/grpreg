@@ -1,0 +1,5 @@
+useDynLib(grpreg,.registration=TRUE)
+export(grpreg,select)
+importFrom(graphics,plot)
+S3method(select,grpreg)
+S3method(plot,grpreg)
