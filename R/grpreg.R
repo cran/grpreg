@@ -11,24 +11,38 @@
 ##         ii. Transformed back to original scale
 ##      c. The number of iterations until convergence for each lambda value
 
-grpreg <- function(Data,penalty,lambda=NULL,n.lambda=100,lambda.min=NULL,lambda.max=NULL,lambda2=.001,eps=.005,max.iter=100,verbose=FALSE,monitor=NULL,warn.conv=TRUE,...)
+grpreg <- function(X, y, group=1:ncol(X), family="gaussian", penalty="gMCP", lambda, n.lambda=100, lambda.min=ifelse(n>p,.001,.05), lambda.max, lambda2=.001, eps=.005, max.iter=1000, delta=1e-8, gamma=.5, a=ifelse(family=="gaussian",3,30), verbose=FALSE, monitor=NULL, warn.conv=TRUE)
   {
-    ## Format
-    par <- list(penalty=penalty,lambda=lambda,n.lambda=n.lambda,lambda.min=lambda.min,lambda.max=lambda.max,lambda2=lambda2,eps=eps,max.iter=max.iter,verbose=verbose,monitor=monitor,...)
-    Data <- formatData(Data)
-    par <- formatPar(Data,par)
+    ## Setup/error check
+    if (length(group)!=ncol(X)) stop("group does not match X")
+    if (is.null(colnames(X))) colnames(X) <- paste("V",1:ncol(X),sep="")
+    if (delta <= 0) stop("Delta must be a positive number")
+    J <- max(group)
+    K <- as.numeric(table(group))
+    if (!identical(as.integer(sort(unique(group))),as.integer(1:J))) stop("Groups must be consecutively numbered 1,2,3,...")
+    n <- nrow(X)
+    meanx <- apply(X,2,mean)
+    normx <- sqrt(apply((t(X)-meanx)^2,1,sum))/sqrt(n)
+    if (any(normx < 0.0001)) stop("X contains columns which are numerically constant.  If you are attempting to specify an intercept, please remove these columns; an intercept is included automatically.")
+    X <- scale(X,meanx,normx)
+    X <- cbind(1,X)
+    group <- c(0,group)
+    colnames(X)[1] <- "(Intercept)"
+    p <- ncol(X)
+    if (missing(lambda)) lambda <- setupLambda(X,y,group,family,J,K,penalty,lambda.max,lambda.min,n.lambda,a,gamma)
+    l <- length(lambda)
 
-    path <- .C("gpPathFit",double(Data$p*par$n.lambda),integer(par$n.lambda),double(par$n.lambda),as.double(Data$X),as.double(Data$y),as.integer(Data$group),Data$family,as.integer(Data$n),as.integer(Data$p),as.integer(Data$J),as.integer(Data$K),par$penalty,as.double(par$lambda),as.integer(par$n.lambda),as.double(par$eps),as.integer(par$max.iter),as.integer(par$verbose),as.integer(par$monitor-1),as.integer(length(par$monitor)),as.double(par$penpars),as.double(par$lambda2),as.integer(warn.conv))
-    beta <- matrix(path[[1]],nrow=Data$p,byrow=T,dimnames=list(colnames(Data$X),round(par$lambda,digits=3)))
-    val <- list(beta=unstandardize(beta,Data),
-                beta.std=beta,
-                lambda=par$lambda,
-                lambda2=par$lambda2[1]/par$lambda[1],
-                penalty=par$penalty,
+    path <- .C("gpPathFit",double(p*l),integer(l),double(l),as.double(X),as.double(y),as.integer(group),family,as.integer(n),as.integer(p),as.integer(J),as.integer(K),penalty,as.double(lambda),as.integer(l),as.double(eps),as.integer(max.iter),as.integer(verbose),as.integer(monitor-1),as.integer(length(monitor)),as.double(delta),as.double(gamma),as.double(a),as.double(lambda2*lambda),as.integer(warn.conv))
+    beta <- matrix(path[[1]],nrow=p,byrow=T,dimnames=list(colnames(X),round(lambda,digits=4)))
+
+    val <- list(beta=unstandardize(beta,meanx,normx),
+                family=family,
+                group=group,
+                lambda=lambda,
+                lambda2=lambda2,
+                penalty=penalty,
                 df=path[[3]],
-                iter=path[[2]],
-                par=par[c("n.lambda","lambda.min","lambda.max","eps","delta","max.iter")],
-                Data=Data)
+                iter=path[[2]])
     class(val) <- "grpreg"
     return(val)
   }

@@ -1,32 +1,20 @@
-plot.grpreg <- function(x,col=NULL,alpha=FALSE,color=TRUE,type="l",lty=1,pch=NULL,xlab=expression(lambda),ylab=expression(hat(beta)),...)
+plot.grpreg <- function(x, color=TRUE, alpha=1, type="l", pch=1:p, lty=1, xlab=expression(lambda), ylab=expression(hat(beta)), legend.loc, ...)
   {
-    if (is.logical(alpha))
+    zeros <- which(apply(abs(x$beta),1,sum)==0)
+    ind <- -1*c(1,zeros)
+    beta <- x$beta[ind,,drop=FALSE]
+    p <- nrow(beta)
+    g1 <- as.factor(x$group[ind])
+    g2 <- as.numeric(g1)
+    n.g2 <- max(g2)
+    if (color) col <- hsv(seq(0,1,len=(n.g2+1)),alpha=alpha)[g2]
+    else col <- rgb(0,0,0,alpha=alpha)
+    l <- x$lambda
+    matplot(l,t(beta),type=type,xlab=xlab,ylab=ylab,pch=pch,col=col,lty=lty,xlim=rev(range(l)),...)
+    abline(h=0)    
+    if(!missing(legend.loc))
       {
-        if (alpha)
-          {
-            if (color) alpha <- exp(1-log(sum(x$Data$group!=0),14))
-            else  alpha <- exp(1-log(sum(x$Data$group!=0),7))
-          }
-        else alpha <- 1
+        if (length(col)==1) col <- rep(col,p)
+        legend(legend.loc,lty=lty,legend=g1[!duplicated(g2)],col=col[!duplicated(g2)])
       }
-    if (!is.numeric(alpha)) stop("alpha must be either logical or numeric")
-    if (color)
-      {
-        if (is.null(col))
-          {
-            group <- x$Data$group[x$Data$group!=0]
-            n.g <- max(x$Data$group)
-            col <- rep(hcl(seq(0,360,len=(n.g+1)),c=1000,l=100,alpha=alpha)[1:n.g],table(group))
-          }
-      }
-    else
-      {
-        col <- rgb(0,0,0,alpha=alpha)
-      }
-    if (is.null(pch))
-      {
-        p <- nrow(x$beta)
-        pch <- 1:p
-      }
-    matplot(x$lambda,t(x$beta[x$Data$group!=0,]),type=type,xlab=xlab,ylab=ylab,pch=pch,col=col,lty=lty,...)
   }
