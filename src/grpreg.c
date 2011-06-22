@@ -174,8 +174,8 @@ static void gLasso(double *beta, double *x, double *w, double *r, int K0, int Kj
 	  beta[j] = (sxr+sxx*oldbeta)/(sxx+n*(ljk + lambda2));
 	  for (i=0; i<n; i++) r[i] = r[i] - (beta[j]-oldbeta)*x[n*j+i];
 	  sbb = sbb + pow(beta[j],2) - pow(oldbeta,2);
+	  df[0] = df[0] + fabs(beta[j]) / fabs(sxr/sxx+beta[j]);
 	}
-      df[0] = df[0] + fabs(beta[j])/fabs(sxr/sxx+beta[j]);
     }
   else if (beta[K0]!=0)
     {
@@ -240,7 +240,7 @@ static double dMCP(double theta, double l, double a)
   else return(0);
 }
 
-static void gMCP(double *beta, double *x, double *w, double *r, int K0, int Kj, int n, double lambda, double lambda2, double a, double *df)
+static void gMCP(double *beta, double *x, double *w, double *r, int K0, int Kj, int n, double lambda, double lambda2, double gamma, double *df)
 {
   int i, j, K;
   K = Kj - K0;
@@ -248,8 +248,8 @@ static void gMCP(double *beta, double *x, double *w, double *r, int K0, int Kj, 
   double phi,l1,l2,a1,a2;
   l1 = lambda;
   l2 = lambda;
-  a1 = (K*a*pow(lambda,2))/(2*l1);
-  a2 = a;
+  a1 = (K*gamma*pow(lambda,2))/(2*l1);
+  a2 = gamma;
 
   sMCP = 0;
   for (j=K0; j<Kj; j++) sMCP = sMCP + MCP(beta[j],l2,a2);
@@ -280,7 +280,7 @@ static void gMCP(double *beta, double *x, double *w, double *r, int K0, int Kj, 
     }
 }
 
-static void gpPathFit(double *beta, int *counter, double *df, double *x, double *y, int *group, char **family, int *n, int *p, int *J, int *K, char **penalty, double *lambda, int *nlambda, double *eps, int *max_iter, int *verbose, int *monitor, int *n_monitor, double *delta, double *gamma, double *a, double *lambda2, int *warn_conv)
+static void gpPathFit(double *beta, int *counter, double *df, double *x, double *y, int *group, char **family, int *n, int *p, int *J, int *K, char **penalty, double *lambda, int *nlambda, double *eps, int *max_iter, int *verbose, double *delta, double *gamma, double *lambda2, int *warn_conv)
 {
   int l, i, j, g, K0, Kj, converged;
   int saturated=0;
@@ -450,17 +450,17 @@ static void gpPathFit(double *beta, int *counter, double *df, double *x, double 
 	      /*Rprintf("%f %f %f %f %f\n",beta[0],beta[1],beta[2],beta[3],beta[4]);*/
 	      if (strcmp(penalty[0],"gLasso")==0) gLasso(Beta[l],x,w,r,K0,Kj,*n,lambda[l],*delta,lambda2[l],&df[l]);
 	      if (strcmp(penalty[0],"gBridge")==0) gBridge(Beta[l],x,w,r,K0,Kj,*n,lambda[l],*gamma,lambda2[l],&df[l]);
-	      if (strcmp(penalty[0],"gMCP")==0) gMCP(Beta[l],x,w,r,K0,Kj,*n,lambda[l],lambda2[l],*a,&df[l]);
+	      if (strcmp(penalty[0],"gMCP")==0) gMCP(Beta[l],x,w,r,K0,Kj,*n,lambda[l],lambda2[l],*gamma,&df[l]);
 	      j = Kj;
 	    }
 	  /*Rprintf("%d %d\n",counter[0],max_iter[0]);
 	    Rprintf("%f %f %f\n",beta_new[0],beta_new[1],beta_new[2]);
 	    Rprintf("%f %f %f\n",beta_old[0],beta_old[1],beta_old[2]);*/
-	  if (*n_monitor != 0)
+	  /*if (*n_monitor != 0)
 	    {
 	      for (i=0; i<*n_monitor;i++) Rprintf("%.6f ",Beta[l][monitor[i]]);
 	      Rprintf("\n");
-	    }
+	      }*/
 	  if (checkConvergence(Beta[l],beta_old,*eps,*p))
 	    {
 	      converged  = 1;
@@ -515,7 +515,7 @@ static void gBridgeMax(double *max, double *x, double *r, double *w, int K0, int
     }
 }
 
-static void gMCPMax(double *max, double *x, double *r, double *w, int K0, int Kj, int n, double a)
+static void gMCPMax(double *max, double *x, double *r, double *w, int K0, int Kj, int n)
 {
   int i, j, K;
   K = Kj - K0;
@@ -530,7 +530,7 @@ static void gMCPMax(double *max, double *x, double *r, double *w, int K0, int Kj
     }
 }
 
-static void determineMax(double *max, double *x, double *r, double *w, int *group, char **family, int *n, int *p, int *J, int *K, char **penalty, double *gamma, double *a)
+static void determineMax(double *max, double *x, double *r, double *w, int *group, char **family, int *n, int *p, int *J, int *K, char **penalty, double *gamma)
 {
   int j, g, K0, Kj;
 
@@ -539,18 +539,16 @@ static void determineMax(double *max, double *x, double *r, double *w, int *grou
     {
       K0 = j;
       Kj = j + K[g];
-      /*Rprintf("%d %d\n",K0,Kj);*/
-      /*Rprintf("%f %f %f %f %f\n",beta[0],beta[1],beta[2],beta[3],beta[4]);*/
       if (strcmp(penalty[0],"gLasso")==0) gLassoMax(max,x,r,w,K0,Kj,*n);
       if (strcmp(penalty[0],"gBridge")==0) gBridgeMax(max,x,r,w,K0,Kj,*n,*gamma);
-      if (strcmp(penalty[0],"gMCP")==0) gMCPMax(max,x,r,w,K0,Kj,*n,*a);
+      if (strcmp(penalty[0],"gMCP")==0) gMCPMax(max,x,r,w,K0,Kj,*n);
       j = Kj;
     }
 }
 
 static const R_CMethodDef cMethods[] = {
-  {"gpPathFit", (DL_FUNC) &gpPathFit, 24},
-  {"determineMax", (DL_FUNC) &determineMax, 13},
+  {"gpPathFit", (DL_FUNC) &gpPathFit, 21},
+  {"determineMax", (DL_FUNC) &determineMax, 12},
   NULL
 };
 

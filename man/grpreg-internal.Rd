@@ -7,8 +7,7 @@
 \description{Internal grpreg functions}
 \usage{
 calcL(X,y,beta,family)
-setupLambda(X,y,group,family,J,K,penalty,lambda.max,lambda.min,n.lambda,a,gamma)
-criteria.grpreg(X,y,beta,family,method,df)
+setupLambda(X,y,group,family,J,K,penalty,lambda.max,lambda.min,nlambda,gamma)
 unstandardize(beta,meanx,normx)
 }
 \author{Patrick Breheny <patrick.breheny@uky.edu>}
@@ -16,8 +15,7 @@ unstandardize(beta,meanx,normx)
   calculates the loss function of a model given a formatted Data object
   and a vector of coefficients beta.  \code{setupLambda} creates an
   appropriate vector of regularization parameter values.
-  \code{criteria.grpreg} calculates the AIC, BIC, and GCV information
-  criteria. \code{unstandardize} returns standardized coefficients to
+  \code{unstandardize} returns standardized coefficients to
   their original scale.
   }
 \keyword{internal}

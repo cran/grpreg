@@ -23,8 +23,8 @@ provides methods for selecting the optimal point along the path using a
 variety of information criteria and for plotting the paths.
 }
 \references{Breheny, P. and Huang, J. (2009) Penalized methods for
-  bi-level variable selection.  \emph{Statistics and its interface},
-  \bold{2}: 369--380.}
+  bi-level variable selection.  Statistics and its interface, 2:
+  369-380.}
 \author{Patrick Breheny <patrick.breheny@uky.edu>}
 \keyword{models}
 \keyword{regression}
@@ -37,5 +37,5 @@ group <- c(1,1,1,2,2,2,3,3,4,5,5,6,7,8,8,8)
 
 fit <- grpreg(X,y,group,penalty="gMCP")
 plot(fit)
-select(fit,X,y)
+select(fit)
 }

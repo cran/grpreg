@@ -1,20 +1,47 @@
-plot.grpreg <- function(x, color=TRUE, alpha=1, type="l", pch=1:p, lty=1, xlab=expression(lambda), ylab=expression(hat(beta)), legend.loc, ...)
+plot.grpreg <- function(x, alpha=1, legend.loc, log.l=FALSE, ...)
   {
     zeros <- which(apply(abs(x$beta),1,sum)==0)
-    ind <- -1*c(1,zeros)
+    ind <- -c(1,zeros)
     beta <- x$beta[ind,,drop=FALSE]
+    g <- as.numeric(as.factor(x$group[ind]))
     p <- nrow(beta)
-    g1 <- as.factor(x$group[ind])
-    g2 <- as.numeric(g1)
-    n.g2 <- max(g2)
-    if (color) col <- hsv(seq(0,1,len=(n.g2+1)),alpha=alpha)[g2]
-    else col <- rgb(0,0,0,alpha=alpha)
     l <- x$lambda
-    matplot(l,t(beta),type=type,xlab=xlab,ylab=ylab,pch=pch,col=col,lty=lty,xlim=rev(range(l)),...)
-    abline(h=0)    
+    n.g <- max(g)
+
+    if (log.l)
+      {
+        l <- log(l)
+        xlab <- expression(log(lambda))
+      }
+    else xlab <- expression(lambda)
+
+    plot.args <- list(x=l, y=1:length(l), ylim=range(beta), xlab=xlab, ylab=expression(hat(beta)), type="n", xlim=rev(range(l)))
+    new.args <- list(...)
+    if (length(new.args))
+      {
+        new.plot.args <- new.args[names(new.args) %in% c(names(par()),names(formals(plot.default)))]
+        plot.args[names(new.plot.args)] <- new.plot.args
+      }
+    do.call("plot", plot.args)
+
+    line.args <- list(col=hcl(h=seq(0,360,len=(n.g+1)),l=70,c=100,alpha=alpha)[1:n.g],lwd=1+1.2^(-p/20),lty=1)
+    if (length(new.args)) line.args[names(new.args)] <- new.args
+    line.args$x <- l
+    line.args$y <- t(beta)
+    line.args$col <- rep(line.args$col,table(g))
+    do.call("matlines",line.args)
+
+    abline(h=0,lwd=line.args$lwd)
+    
     if(!missing(legend.loc))
       {
-        if (length(col)==1) col <- rep(col,p)
-        legend(legend.loc,lty=lty,legend=g1[!duplicated(g2)],col=col[!duplicated(g2)])
+        legend.args <- list(col=hcl(h=seq(0,360,len=(n.g+1)),l=70,c=100,alpha=alpha)[1:n.g],lwd=1+1.2^(-p/20),lty=1,legend=unique(g))
+        if (length(new.args))
+          {
+            new.legend.args <- new.args[names(new.args) %in% names(formals(legend))]
+            legend.args[names(new.legend.args)] <- new.legend.args
+          }
+        legend.args$x <- legend.loc
+        do.call("legend",legend.args)
       }
   }

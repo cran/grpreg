@@ -6,12 +6,11 @@
   grpreg object according to the AIC, BIC, or GCV criteria.}
 \usage{
 select(obj,\dots)
-\method{select}{grpreg}(obj, X, y, criterion="BIC", df.method="default",
-...)
+\method{select}{grpreg}(obj, criterion = c("BIC", "AIC", "GCV"),
+df.method = c("default", "active"), ...) 
 }
 \arguments{
   \item{obj}{A fitted grpreg object.}
-  \item{X,y}{The data used to fit the model.}
   \item{criterion}{The criterion by which to select the regularization
     parameter.  One of \code{"AIC"}, \code{"BIC"}, or \code{"GCV"};
     default is \code{"BIC"}.} 
@@ -21,8 +20,8 @@ select(obj,\dots)
     \code{df} returned by \code{grpreg}.  Default is \code{"default"}.}
   \item{\dots}{For S3 method compatibility.}}
 \details{
-  The criteria are defined as follows, where \code{L} is the loss function
-  (usually, \code{-loglik}) and \code{n} is the sample size: \cr
+  The criteria are defined as follows, where \code{L} is the log
+  likelihood and \code{n} is the sample size: \cr
   \deqn{AIC = 2*L + 2*df} \cr
   \deqn{BIC = 2*L + log(n)*df} \cr
   \deqn{GCV= 2*L/((1-df/n)^2)}}
@@ -38,8 +37,8 @@ select(obj,\dots)
     point on the regularization path.}
   }
 \references{Breheny, P. and Huang, J. (2009) Penalized methods for
-  bi-level variable selection.  \emph{Statistics and its interface},
-  \bold{2}: 369--380.}
+  bi-level variable selection.  Statistics and its interface, 2:
+  369-380.}
 \author{Patrick Breheny <patrick.breheny@uky.edu>}
 \seealso{\code{grpreg}}
 \examples{
@@ -48,9 +47,14 @@ X <- as.matrix(birthwt.grpreg[,-1:-2])
 y <- birthwt.grpreg$bwt
 group <- c(1,1,1,2,2,2,3,3,4,5,5,6,7,8,8,8)
 fit <- grpreg(X,y,group,penalty="gMCP")
-select(fit,X,y)
-select(fit,X,y,crit="AIC",df="active")
-plot(fit$lambda,select(fit,X,y)$IC,xlim=rev(range(fit$lambda)))
+select(fit)
+select(fit,crit="AIC",df="active")
+plot(fit)
+abline(v=select(fit,df.method="active")$lambda)
+par(mfrow=c(1,3))
+plot(fit$lambda,select(fit)$IC,xlim=rev(range(fit$lambda)),pch=19,type="o",ylab="BIC")
+plot(fit$lambda,select(fit,"AIC")$IC,xlim=rev(range(fit$lambda)),pch=19,type="o",ylab="AIC")
+plot(fit$lambda,select(fit,"GCV")$IC,xlim=rev(range(fit$lambda)),pch=19,type="o",ylab="GCV")
 }
 \keyword{models}
 \keyword{regression}

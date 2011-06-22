@@ -5,11 +5,11 @@
 a grid of values of the regularization parameter lambda. Fits linear and
 logistic regression models.}
 \usage{
-grpreg(X, y, group=1:ncol(X), family="gaussian", penalty="gMCP", lambda,
-n.lambda=100, lambda.min=ifelse(n>p,.001,.05), lambda.max, lambda2=.001,
-eps=.005, max.iter=1000, delta=1e-8, gamma=.5,
-a=ifelse(family=="gaussian",3,30), verbose=FALSE, monitor=NULL,
-warn.conv=TRUE)
+grpreg(X, y, group=1:ncol(X), family=c("gaussian","binomial"),
+penalty=c("gMCP", "gBridge", "gLasso"), nlambda=100, lambda,
+lambda.min=ifelse(n>p,.001,.05), lambda.max, alpha=.999,
+eps=.005, max.iter=1000, delta=1e-8,
+gamma=switch(penalty,gMCP=3,gBridge=0.5), verbose=FALSE, warn.conv=TRUE)
 }
 \arguments{
   \item{X}{The design matrix, without an intercept.  \code{grpreg}
@@ -26,7 +26,7 @@ warn.conv=TRUE)
   Typically, this is left unspecified, and the function automatically
   computes a vector of lambda values that ranges uniformly on the log 
   scale from \code{lambda.min} to \code{lambda.max}.}
-  \item{n.lambda}{The number of \code{lambda} values.  Default is 100.}
+  \item{nlambda}{The number of \code{lambda} values.  Default is 100.}
   \item{lambda.min}{The smallest value for \code{lambda}, as a fraction
   of \code{lambda.max}.  Default is .001 if the number of observations
   is larger than the number of covariates and .05 otherwise.} 
@@ -35,9 +35,11 @@ warn.conv=TRUE)
   This can be calculated for group lasso and group MCP, but not for
   group bridge.  If \code{lambda.max} is left unspecified for group
   bridge, \code{grpreg} will make a rough guess.}
-  \item{lambda2}{By default, a small L2 penalty is included alongside
-  the group penalty.  \code{lamdba2} controls the magnitude of this
-  penalty, as a fraction of \code{lambda}.}
+  \item{alpha}{By default, a small L2 penalty is included alongside
+  the group penalty.  \code{1-alpha} controls the magnitude of this
+  penalty, as a fraction of \code{lambda}.  Default is 0.999, meaning
+  that a term equal to 0.001*lambda*L2penalty is added to the objective
+  function to be minimized.}
   \item{eps}{Convergence threshhold.  The algorithm iterates until the
   relative change in any coefficient is less than \code{eps}.  Default
   is \code{.005}.  See details.}
@@ -46,16 +48,12 @@ warn.conv=TRUE)
   \item{delta}{The amount by which the group lasso penalty is bounded
   away from 0.  Smaller values of \code{delta} produce more accurate
   results, but converge more slowly.  See example.}
-  \item{gamma}{Tuning parameter of the bridge penalty; defaults to 1/2}
-  \item{a}{Tuning parameter of the group MCP penalty - defaults to 3 for
-  linear regression and 30 for logistic regression;}
+  \item{gamma}{Tuning parameter of the bridge/group MCP penalty;
+    defaults to 3 for group MCP and 0.5 for bridge.  See details.}
   \item{warn.conv}{Should the function give a warning if it fails to
   converge?  Default is TRUE.  See details.} 
   \item{verbose}{Get a running update on what the algorithm is doing.
   Default is FALSE.} 
-  \item{monitor}{Monitor the iterations of a vector of covariates.  If
-  set to a numeric vector, for example \code{c(3,5)}, the algorithm will
-  display iterates of the third and fifth covariates as it progresses.}
 }
 \details{
   The sequence of models indexed by \code{lambda} is fit using a locally
@@ -65,9 +63,17 @@ warn.conv=TRUE)
   be
   \deqn{1/(2*n)RSS + penalty}
   for \code{"gaussian"} and
-  \deqn{-1/nobs loglik + \lambda*penalty}
+  \deqn{-1/nobs loglik + penalty}
   for \code{"binomial"}, where the likelihood is from a traditional
   generalized linear model for the log-odds of an event.\cr
+  \cr
+  In keeping with the notation from the original papers on the bridge
+  and MCP estimators, the tuning parameters of both group bridge and
+  group MCP are both denoted 'gamma'.  In group bridge, gamma is the
+  exponent to which the L1 norm of the coefficients in the group are
+  raised (default is 0.5, the square root).  In group MCP, gamma refers
+  to the knot location of the piecewise penalty.  In the Breheny and
+  Huang paper, 'gamma' is denoted 'a'.\cr
   \cr
   This algorithm is stable and generally converges quite rapidly to
   values close to the solution.  However, especially when p is large
@@ -101,8 +107,8 @@ warn.conv=TRUE)
     of iterations until convergence at each value of \code{lambda}.}
 }
 \references{Breheny, P. and Huang, J. (2009) Penalized methods for
-  bi-level variable selection.  \emph{Statistics and its interface},
-  \bold{2}: 369--380.}
+  bi-level variable selection.  Statistics and its interface, 2:
+  369-380.}
 \author{Patrick Breheny <patrick.breheny@uky.edu>}
 \seealso{\code{plot} and \code{select} methods.}
 \examples{
@@ -116,7 +122,7 @@ fit <- grpreg(X,y,group,penalty="gBridge",lambda.max=.08)
 plot(fit)
 fit <- grpreg(X,y,group,penalty="gMCP")
 plot(fit)
-select(fit,X,y)
+select(fit)
 
 # Role of delta
 # Note that fit2 cuts down on the # of iterations,
@@ -127,7 +133,7 @@ par(mfrow=c(2,1))
 plot(fit1)
 plot(fit2)
 dev.off()
-plot(fit1$lambda,fit1$iter,type="l")
+plot(fit1$lambda,fit1$iter,type="l",ylab="Iterations",xlab=expression(lambda))
 lines(fit2$lambda,fit2$iter,lty=2)
 
 # Logistic regression
@@ -138,7 +144,7 @@ fit <- grpreg(X,y,group,penalty="gBridge",lambda.max=.03)
 plot(fit)
 fit <- grpreg(X,y,group,penalty="gMCP")
 plot(fit)
-select(fit,X,y)
+select(fit)
 }
 \keyword{models}
 \keyword{regression}

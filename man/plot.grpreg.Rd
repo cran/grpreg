@@ -3,29 +3,21 @@
 \title{plot coefficients from a "grpreg" object}
 \description{Produces a plot of the coefficient paths for a fitted \code{"grpreg"} object.}
 \usage{
-\method{plot}{grpreg}(x, color=TRUE, alpha=1, type="l", pch=1:p, lty=1,
-xlab=expression(lambda), ylab=expression(hat(beta)), legend.loc, ...) 
+\method{plot}{grpreg}(x, alpha=1, legend.loc, log.l = FALSE, ...)
 }
 \arguments{
   \item{x}{Fitted \code{"grpreg"} model.}
-  \item{color}{TRUE for color plots, FALSE for black and white.
-    Defaults to TRUE; overridden by \code{col} if both are specified.}
   \item{alpha}{Controls alpha-blending.  Default is alpha=1.}
-  \item{type}{Type of plot.  Default is a line plot.  See \code{matplot}
-    for details.}
-  \item{lty}{Line type.  Defaults to solid.  See See \code{matplot}
-    for details.}
-  \item{pch}{Plotting character.  Defaults to no plotted characters.
-    See \code{matplot} for details.}
-  \item{xlab}{Horizontal axis label.}
-  \item{ylab}{Vertical axis label.}
   \item{legend.loc}{Where should the legend go?  If left unspecified, no
     legend is drawn.  See \code{legend} for details.}
-  \item{\dots}{Other graphical parameters to \code{matplot}}
+  \item{log.l}{Should horizontal axis be on the log scale?  Default is
+    FALSE.} 
+  \item{\dots}{Other graphical parameters to \code{plot},
+    \code{matlines}, or \code{legend}}
 }
 \references{Breheny, P. and Huang, J. (2009) Penalized methods for
-  bi-level variable selection.  \emph{Statistics and its interface},
-  \bold{2}: 369--380.}
+  bi-level variable selection.  Statistics and its interface, 2:
+  369-380.}
 \author{Patrick Breheny <patrick.breheny@uky.edu>}
 \seealso{\code{grpreg}}
 \examples{
@@ -35,8 +27,8 @@ y <- birthwt.grpreg$bwt
 group <- c(1,1,1,2,2,2,3,3,4,5,5,6,7,8,8,8)
 fit <- grpreg(X,y,group,penalty="gMCP",lambda.min=.5)
 plot(fit)
-plot(fit,color=FALSE)
-plot(fit,color=TRUE,legend.loc="topleft")
+plot(fit,legend.loc="topleft",lwd=6,alpha=0.5)
+plot(fit,legend.loc="topleft",col=c("black","red","green","blue","yellow","purple","orange","brown"),legend=c("A","B","C","D","E","F","G","H"))
 }
 \keyword{models}
 \keyword{regression}
