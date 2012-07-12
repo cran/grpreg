@@ -2,6 +2,9 @@
 **  Substantial change
 *** Major change
 
+1.2-2
+	*  Fixed accidental passing of NULL to .C
+
 1.2-0
 	*  DESCRIPTION: Fixed contact info
 	*  CITATION: Updated citation

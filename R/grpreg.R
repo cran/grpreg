@@ -1,4 +1,4 @@
-grpreg <- function(X, y, group=1:ncol(X), family=c("gaussian","binomial"), penalty=c("gMCP","gBridge","gLasso"), nlambda=100, lambda, lambda.min=ifelse(n>p,.001,.05), lambda.max, alpha=.999, eps=.005, max.iter=1000, delta=1e-8, gamma=switch(penalty,gMCP=3,gBridge=0.5), verbose=FALSE, warn.conv=TRUE)
+grpreg <- function(X, y, group=1:ncol(X), family=c("gaussian","binomial"), penalty=c("gMCP","gBridge","gLasso"), nlambda=100, lambda, lambda.min=ifelse(n>p,.001,.05), lambda.max, alpha=.999, eps=.005, max.iter=1000, delta=1e-8, gamma={if (penalty=="gBridge") 0.5 else 3}, verbose=FALSE, warn.conv=TRUE)
   {
     ## Check for errors
     family <- match.arg(family)
