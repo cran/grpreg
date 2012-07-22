@@ -47,7 +47,7 @@ grpreg <- function(X, y, group=1:ncol(X), penalty=c("grLasso", "grMCP", "grSCAD"
   
   ## Eliminate saturated lambda values, if any
   ind <- !is.na(b[p,])
-  b <- b[,ind,drop=FALSE]
+  b <- b[, ind, drop=FALSE]
   iter <- iter[ind]
   lambda <- lambda[ind]
   df <- df[ind]

@@ -45,7 +45,7 @@ cv.grpreg <- function(X, y, group=1:ncol(X), penalty=c("grLasso", "grMCP", "grSC
     X2 <- X[cv.ind==i,]
     y2 <- y[cv.ind==i]
 
-    fit.i <- grpreg(X1, y1, penalty=penalty, family=family, alpha=alpha, lambda=lambda, warn=FALSE, ...)
+    fit.i <- grpreg(X1, y1, group=group, penalty=penalty, family=family, alpha=alpha, lambda=lambda, warn=FALSE, ...)
     yhat <- predict(fit.i, X2, type="response")
     error[i, 1:ncol(yhat)] <- loss.grpreg(y2, yhat, family)
   }
