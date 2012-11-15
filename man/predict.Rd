@@ -24,8 +24,8 @@ type=c("link", "response", "class", "coefficients", "vars", "groups",
     linear predictors; \code{"response"} gives the fitted values;
     \code{"class"} returns the binomial outcome with the highest
     probability; \code{"coefficients"} returns the coefficients;
-    \code{"vars"} returns the number of nonzero coefficients;
-    \code{"groups"} returns the number of groups with at least one
+    \code{"vars"} returns the indices for the nonzero coefficients;
+    \code{"groups"} returns the indices for the groups with at least one
     nonzero coefficient; \code{"norm"} returns the L2 norm of the
     coefficients in each group.}
   \item{\dots}{Not used.}}
@@ -42,7 +42,7 @@ coef(fit, lambda=.001)
 predict(fit, X, type="link", lambda=.001)
 predict(fit, X, type="response", lambda=.001)
 predict(fit, X, type="class", lambda=.001)
-predict(fit, X, type="vars")
-predict(fit, X, type="groups")
-predict(fit, X, type="norm", lambda=.001)
+predict(fit, X, type="vars", lambda=.07)
+predict(fit, X, type="groups", lambda=.07)
+predict(fit, X, type="norm", lambda=.07)
 }

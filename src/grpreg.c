@@ -61,7 +61,6 @@ static double norm(double *x, int p)
   return(x_norm);
 }
 
-
 // Soft-thresholding operator
 static double S(double z, double l)
 {
@@ -134,7 +133,7 @@ static void gd_gaussian(double *beta, double *x, double *r, int g, int *K1, int 
   }
 
   // Update df
-  if (len > 0) *df = *df + K * len / z_norm;
+  if (len > 0) df[l] = df[l] + K * len / z_norm;
   Free(z);
 }
 
@@ -164,7 +163,7 @@ static void gd_binomial(double *beta, double *x, double *r, int g, int *K1, int 
   }
 
   // Update df
-  df[0] = df[0] + K * len / z_norm;
+  if (len > 0) df[l] = df[l] + K * len / z_norm;
   Free(z);
 }
 
@@ -350,7 +349,7 @@ static void gpPathFit_gaussian(double *beta, int *iter, double *df, double *loss
 static void gpPathFit_binomial(double *beta0, double *beta, int *iter, double *df, double *Dev, double *x, double *y, int *n_, int *p_, char **penalty_, int *J_, int *K1, int *K0_, double *lam1, double *lam2, int *L_, double *eps_, double *delta_, int *max_iter_, double *gamma_, double *tau_, double *group_multiplier, int *dfmax_, int *warn_, int *user_)
 {
   int n=n_[0]; int p=p_[0]; char *penalty=penalty_[0]; int J=J_[0]; int K0=K0_[0]; int L=L_[0]; int max_iter=max_iter_[0]; double eps=eps_[0]; double delta=delta_[0]; double gamma=gamma_[0]; double tau=tau_[0]; int dfmax=dfmax_[0]; int warn = warn_[0]; int user = user_[0];
-  double beta0_old;
+  double beta0_old=0;
   double *r = Calloc(n, double);
   double *w = Calloc(n, double);
   double *beta_old = Calloc(p, double);
@@ -396,20 +395,19 @@ static void gpPathFit_binomial(double *beta0, double *beta, int *iter, double *d
       for (int i=0; i<n; i++) {
 	eta = beta0_old;
 	for (int j=0; j<p; j++) if (beta_old[j] != 0) eta = eta + x[j*n+i] * beta_old[j];
-	pi = exp(eta) / (1+exp(eta));
-	if (strncmp(penalty, "gr", 2)==0) r[i] = (y[i] - pi) / 0.25;
-	else {
-	  if (pi > .9999) {
-	    pi = 1;
-	    w[i] = .0001;
-	  } else if (pi < .0001) {
-	    pi = 0;
-	    w[i] = .0001;
-	  } else w[i] = pi*(1-pi);
-	  r[i] = (y[i] - pi) / w[i];
+	if (eta > 15) {
+	  pi = 0.999999;
+	  w[i] = 0.000001;
+	} else if (eta < -15) {
+	  pi = 0.000001;
+	  w[i] = 0.000001;
+	} else {
+	  pi = exp(eta) / (1+exp(eta));
+	  w[i] = pi*(1-pi);
 	}
-	Dev[l] = Dev[l] - y[i]*log(pi) - (1-y[i])*log(1-pi);
-      }
+	r[i] = (y[i] - pi) / w[i];
+	Dev[l] += - y[i]*log(pi) - (1-y[i])*log(1-pi);
+	}
 
       // Check for saturation
       if (Dev[l]/nullDev < .01) {
@@ -509,7 +507,7 @@ static void grPathFit_gaussian(double *beta, int *iter, double *df, double *loss
       // Update penalized groups
       for (int g=0; g<J; g++) {
 	//Rprintf("g=%d  K1[g]=%d  K1[g+1]=%d  gm[g] = %f\n",g,K1[g],K1[g+1],group_multiplier[g]);
-	if (user | l!=0) gd_gaussian(beta, x, r, g, K1, active, n, l, p, penalty, lam1[l]*group_multiplier[g], lam2[l], gamma, &df[l], beta_old);
+	if (user | l!=0) gd_gaussian(beta, x, r, g, K1, active, n, l, p, penalty, lam1[l]*group_multiplier[g], lam2[l], gamma, df, beta_old);
       }
 
       // Check convergence
@@ -528,8 +526,8 @@ static void grPathFit_gaussian(double *beta, int *iter, double *df, double *loss
 
 static void grPathFit_binomial(double *beta0, double *beta, int *iter, double *df, double *Dev, double *x, double *y, int *n_, int *p_, char **penalty_, int *J_, int *K1, int *K0_, double *lam1, double *lam2, int *L_, double *eps_, int *max_iter_, double *gamma_, double *group_multiplier, int *dfmax_, int *warn_, int *user_)
 {
-  int n=n_[0]; int p=p_[0]; char *penalty=penalty_[0]; int J=J_[0]; int K0=K0_[0]; int L=L_[0]; int max_iter=max_iter_[0]; double eps=eps_[0]; double gamma=gamma_[0]; int dfmax=dfmax_[0]; int warn = warn_[0]; int user = user_[0];
-  double beta0_old;
+  int n=n_[0]; int p=p_[0]; char *penalty=penalty_[0]; int J=J_[0]; int K0=K0_[0]; int L=L_[0]; int max_iter=max_iter_[0]; double eps=eps_[0]; double gamma=gamma_[0]; int dfmax=dfmax_[0]; int warn=warn_[0]; int user=user_[0];
+  double beta0_old=0;
   double *r = Calloc(n, double);
   double *beta_old = Calloc(p, double);
   int *active = Calloc(J, int);
@@ -542,6 +540,7 @@ static void grPathFit_binomial(double *beta0, double *beta, int *iter, double *d
   // Path
   double eta, pi;
   for (int l=0; l<L; l++) {
+    //Rprintf("Inside loop, l=%d\n",l+1);
     if (l != 0) {
       beta0_old = beta0[l-1];
       for (int j=0; j<p; j++) beta_old[j] = beta[(l-1)*p+j];
@@ -552,7 +551,7 @@ static void grPathFit_binomial(double *beta0, double *beta, int *iter, double *d
 
       // Check dfmax
       int a = 0;
-      for (int j=0; j<J; j++) a += (beta_old[j] !=0);
+      for (int j=0; j<p; j++) a += (beta_old[j] !=0);
       if (a > dfmax) {
 	for (int ll=l; ll<L; ll++) {
 	  for (int j=0; j<p; j++) beta[ll*p+j] = R_NaReal;
@@ -573,7 +572,9 @@ static void grPathFit_binomial(double *beta0, double *beta, int *iter, double *d
 	    for (int j=K1[g]; j<K1[g+1]; j++) eta += x[n*j+i] * beta_old[j];
 	  }
 	}
-	pi = exp(eta) / (1+exp(eta));
+	if (eta > 15) pi = 0.999999;
+	else if (eta < -15) pi = 0.000001;
+	else pi = exp(eta) / (1+exp(eta));
 	r[i] = (y[i] - pi) / 0.25;
 	Dev[l] += - y[i]*log(pi) - (1-y[i])*log(1-pi);
 	}
@@ -607,7 +608,7 @@ static void grPathFit_binomial(double *beta0, double *beta, int *iter, double *d
 
       // Update penalized groups
       for (int g=0; g<J; g++) {
-	if (user | l!=0) gd_binomial(beta, x, r, g, K1, active, n, l, p, penalty, lam1[l]*group_multiplier[g], lam2[l], gamma, &df[l], beta_old);
+	if (user | l!=0) gd_binomial(beta, x, r, g, K1, active, n, l, p, penalty, lam1[l]*group_multiplier[g], lam2[l], gamma, df, beta_old);
       }
 
       // Check convergence
