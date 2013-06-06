@@ -29,10 +29,13 @@ test_that("grpreg handles constant columns", {
   X[,group==2] <- 0
   y <- rnorm(n)
   yy <- y > 0
-  fit <- grpreg(X, y, group, penalty="grLasso")
-  fit <- grpreg(X, y, group, penalty="gMCP")
-  fit <- grpreg(X, yy, group, penalty="grLasso", family="binomial")
-  fit <- grpreg(X, yy, group, penalty="gMCP", family="binomial")
+  par(mfrow=c(2,3))
+  fit <- grpreg(X, y, group, penalty="grLasso"); plot(fit)
+  fit <- grpreg(X, y, group, penalty="gMCP"); plot(fit)
+  fit <- gBridge(X, y, group); plot(fit)
+  fit <- grpreg(X, yy, group, penalty="grLasso", family="binomial"); plot(fit)
+  fit <- grpreg(X, yy, group, penalty="gMCP", family="binomial"); plot(fit); fit$beta[,100]
+  fit <- gBridge(X, yy, group, family="binomial"); plot(fit); fit$beta[,100]
 })
 
 test_that("grpreg handles groups of non-full rank", {
@@ -43,6 +46,7 @@ test_that("grpreg handles groups of non-full rank", {
   X[,7] <- X[,6]
   y <- rnorm(n)
   yy <- y > 0
+  par(mfrow=c(2,2))
   fit <- grpreg(X, y, group, penalty="grLasso"); plot(fit)
   fit <- grpreg(X, y, group, penalty="gMCP"); plot(fit)
   fit <- grpreg(X, yy, group, penalty="grLasso", family="binomial"); plot(fit)
@@ -85,3 +89,64 @@ test_that("group.multiplier works", {
   plot(fit <- grpreg(X, y, group, penalty="grMCP", lambda.min=0, group.multiplier=gm), main=fit$penalty)
   plot(fit <- grpreg(X, y, group, penalty="grSCAD", lambda.min=0, group.multiplier=gm), main=fit$penalty)
 })
+
+test_that("cv.grpreg() options work for gaussian", {
+  n <- 50
+  group <- rep(0:4,5:1)
+  p <- length(group)
+  X <- matrix(rnorm(n*p),ncol=p)
+  b <- c(-3, 3, rep(0, 13))
+  y <- rnorm(n, mean=X%*%b, sd=1)
+  
+  par(mfrow=c(2,2))
+  cvfit <- cv.grpreg(X, y, group=group)
+  plot(cvfit, type="all")
+  summary(cvfit)
+  
+  b <- c(-3, 3, rep(0, 13))
+  y <- rnorm(n, mean=X%*%b, sd=5)
+  cvfit <- cv.grpreg(X, y, group=group)
+  plot(cvfit, type="all")
+  coef(cvfit)
+  predict(cvfit, type="coef")
+  predict(cvfit, type="vars")
+  predict(cvfit, type="groups")
+  predict(cvfit, type="norm")
+  predict(cvfit, X)
+  
+  b <- rep(0, 15)
+  y <- rnorm(n, mean=X%*%b, sd=5)
+  cvfit <- cv.grpreg(X, y, group=group)
+  plot(cvfit, type="all")
+})  
+
+test_that("cv.grpreg() options work for binomial", {
+  n <- 50
+  group <- rep(0:4,5:1)
+  p <- length(group)
+  X <- matrix(rnorm(n*p),ncol=p)
+  b <- c(-3, 3, rep(0, 13))
+  y <- rnorm(n, mean=X%*%b, sd=1) > 0.5
+  
+  par(mfrow=c(2,2))
+  cvfit <- cv.grpreg(X, y, group=group, family="binomial")
+  plot(cvfit, type="all")
+  summary(cvfit)
+  
+  b <- c(-3, 3, rep(0, 13))
+  y <- rnorm(n, mean=X%*%b, sd=5) > 0.5
+  cvfit <- cv.grpreg(X, y, group=group, family="binomial")
+  plot(cvfit, type="all")
+  coef(cvfit)
+  predict(cvfit, type="coef")
+  predict(cvfit, type="vars")
+  predict(cvfit, type="groups")
+  predict(cvfit, type="norm")
+  predict(cvfit, X)
+  predict(cvfit, X, type="response")
+  
+  b <- rep(0, 15)
+  y <- rnorm(n, mean=X%*%b, sd=5) > 0.5
+  cvfit <- cv.grpreg(X, y, group=group, family="binomial")
+  plot(cvfit, type="all")
+})  

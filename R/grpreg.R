@@ -1,17 +1,27 @@
-grpreg <- function(X, y, group=1:ncol(X), penalty=c("grLasso", "grMCP", "grSCAD", "gMCP", "gBridge", "gLasso"), family=c("gaussian","binomial"), nlambda=100, lambda, lambda.min={if (nrow(X) > ncol(X)) 1e-4 else .05}, alpha=1, eps=.005, max.iter=1000, dfmax=p, gamma = 3, group.multiplier={if (strtrim(penalty,2)=="gr") sqrt(table(group[group!=0])) else rep(1,J)}, warn=TRUE, ...)
-{
+grpreg <- function(X, y, group=1:ncol(X), penalty=c("grLasso", "grMCP", "grSCAD", "gMCP", "gBridge", "gLasso"), family=c("gaussian","binomial"), nlambda=100, lambda, lambda.min={if (nrow(X) > ncol(X)) 1e-4 else .05}, alpha=1, eps=.005, max.iter=1000, dfmax=p, gamma = 3, group.multiplier={if (strtrim(penalty,2)=="gr") sqrt(table(group[group!=0])) else rep(1,J)}, warn=TRUE, ...) {
   ## Check for errors
   family <- match.arg(family)
   penalty <- match.arg(penalty)
   if (penalty=="gLasso") penalty <- "grLasso"
-  if (penalty=="gBridge") stop("gBridge has been divorced from the grpreg function; use the gBridge() function instead")  
+  if (penalty=="gBridge") stop("gBridge has been divorced from the grpreg function; use the gBridge() function instead")
   if (alpha > 1 | alpha <= 0) stop("alpha must be in (0,1]")
   if (length(group)!=ncol(X)) stop("group does not match X")
   J <- max(group)
-  if (!(identical(as.integer(sort(unique(group))),as.integer(1:max(group))) | identical(as.integer(sort(unique(group))),as.integer(0:max(group))))) stop("Groups must be consecutively numbered 1,2,3,...")
-  if (length(group.multiplier)!=max(group)) stop("Length of group.multiplier must equal number of penalized groups")
+  if (!(identical(as.integer(sort(unique(group))),as.integer(1:J)) | identical(as.integer(sort(unique(group))),as.integer(0:max(group))))) stop("Groups must be consecutively numbered 1,2,3,...")
+  if (length(group.multiplier)!=J) stop("Length of group.multiplier must equal number of penalized groups")
   
   ## Set up XX, yy, lambda
+  xnames <- if (is.null(colnames(X))) paste("V",1:ncol(X),sep="") else colnames(X)
+  multi <- FALSE
+  if (is.matrix(y) && ncol(y) > 1) {
+    multi <- TRUE
+    m <- ncol(y)
+    response.names <- if (is.null(colnames(y))) paste("Y",1:m,sep="") else colnames(y)
+    y <- multiY(y)
+    X <- multiX(X, m)
+    group <- c(rep(0, m-1), rep(group, rep(m,length(group))))
+    group.multiplier <- rep(1,J) ## Think about changing in the future
+  }
   XX <- standardize(X)
   center <- attr(XX, "center")
   scale <- attr(XX, "scale")
@@ -79,10 +89,15 @@ grpreg <- function(X, y, group=1:ncol(X), penalty=c("grLasso", "grMCP", "grSCAD"
   beta[nz+1,] <- b[-1,]
   
   ## Names
-  if (is.null(colnames(X))) varnames <- paste("V",1:ncol(X),sep="")
-  else varnames <- colnames(X)
-  varnames <- c("(Intercept)", varnames)
-  dimnames(beta) <- list(varnames, round(lambda,digits=4))
+  varnames <- c("(Intercept)", xnames)
+  if (multi) {
+    beta[2:m,] <- sweep(beta[2:m,], 2, beta[1,], FUN="+")
+    beta <- array(beta, dim=c(m, nrow(beta)/m, ncol(beta)))
+    group.orig <- group.orig[-(1:(m-1))]
+    dimnames(beta) <- list(response.names, varnames, round(lambda,digits=4))
+  } else {
+    dimnames(beta) <- list(varnames, round(lambda,digits=4))
+  }
   
   structure(list(beta=beta,
                  family=family,

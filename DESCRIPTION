@@ -1,8 +1,8 @@
 Package: grpreg
 Title: Regularization paths for regression models with grouped
         covariates
-Version: 2.3-0
-Date: 2013-02-10
+Version: 2.4-0
+Date: 2013-06-06
 Author: Patrick Breheny
 Maintainer: Patrick Breheny <patrick.breheny@uky.edu>
 Depends: R (>= 2.13.0)
@@ -12,6 +12,7 @@ Description: Efficient algorithms for fitting the regularization path
         are based on the idea of either locally approximated coordinate
         descent or group descent, depending on the penalty.
 License: GPL-2
-Packaged: 2013-02-10 12:20:36 UTC; pbreheny
+Packaged: 2013-06-06 20:16:39 UTC; pbreheny
+NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2013-02-10 15:27:42
+Date/Publication: 2013-06-07 08:17:30
