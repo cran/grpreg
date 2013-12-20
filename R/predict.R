@@ -1,11 +1,19 @@
-predict.grpreg <- function(object, X, lambda, which=1:length(object$lambda), type=c("link","response","class","coefficients","vars","groups","norm"), ...) {
+predict.grpreg <- function(object, X, lambda, which=1:length(object$lambda), type=c("link", "response", "class", "coefficients", "vars", "groups", "nvars", "ngroups", "norm"), ...) {
   type <- match.arg(type)
   beta <- coef.grpreg(object, lambda=lambda, which=which, drop=FALSE)
   if (type=="coefficients") return(beta)
   if (length(dim(object$beta)) == 2) {
     if (type=="vars") return(drop(apply(beta[-1, , drop=FALSE]!=0, 2, FUN=which)))
     if (type=="groups") return(drop(apply(beta[-1, , drop=FALSE]!=0, 2, function(x) unique(object$group[x]))))
-    if (type=="norm") return(drop(apply(beta[-1, , drop=FALSE], 2, function(x) tapply(x, object$group, l2))))
+    if (type=="nvars") {
+      v <- drop(apply(beta[-1, , drop=FALSE]!=0, 2, FUN=which))
+      return(sapply(v, length))
+    }
+    if (type=="ngroups") {
+      g <- drop(apply(beta[-1, , drop=FALSE]!=0, 2, function(x) unique(object$group[x])))
+      return(sapply(g, length))
+    }
+    if (type=="norm") return(drop(apply(beta[-1, , drop=FALSE], 2, function(x) tapply(x, object$group, function(x){sqrt(sum(x^2))}))))
     if (missing(X)) stop("Must supply X")
     eta <- sweep(X %*% beta[-1,,drop=FALSE], 2, beta[1,], "+")
     if (object$family=="gaussian" & type=="class") stop("type='class' is not applicable for family='gaussian'")
@@ -16,7 +24,7 @@ predict.grpreg <- function(object, X, lambda, which=1:length(object$lambda), typ
   } else {
     if (type=="vars") return(apply(beta[,-1, , drop=FALSE], 1, function(x){apply(x!=0, 2, FUN=which)}))
     if (type=="groups") return(drop(apply(beta[,-1, , drop=FALSE], 3, function(x){which(apply(x!=0, 2, any))})))
-    if (type=="norm") return(drop(apply(beta[, -1, , drop=FALSE], 3, function(x) apply(x, 2, l2))))
+    if (type=="norm") return(drop(apply(beta[, -1, , drop=FALSE], 3, function(x) apply(x, 2, function(x){sqrt(sum(x^2))}))))
     if (missing(X)) stop("Must supply X")
     eta <- apply(beta[,-1,,drop=FALSE],1,function(b){X%*%b})
     eta <- array(eta, dim=c(nrow(X), dim(beta)[1], dim(beta)[3]), dimnames=list(NULL, dimnames(beta)[[1]], dimnames(beta)[[3]]))
@@ -50,4 +58,3 @@ coef.grpreg <- function(object, lambda, which=1:length(object$lambda), drop=TRUE
   }
   if (drop) return(drop(beta)) else return(beta)
 }
-l2 <- function(x) sqrt(sum(x^2))

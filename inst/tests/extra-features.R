@@ -9,7 +9,7 @@ test_that("logLik() is correct", {
   fit <- grpreg(X, y, group, penalty="grLasso", lambda.min=0)
   expect_that(logLik(fit)[100], equals(logLik(fit.mle)[1], check.attributes=FALSE, tol=.001))
   expect_that(AIC(fit)[100], equals(AIC(fit.mle), check.attributes=FALSE, tol=.001))
-  fit <- grpreg(X, y, group, penalty="gMCP", lambda.min=0)
+  fit <- grpreg(X, y, group, penalty="gel", lambda.min=0)
   expect_that(logLik(fit)[100], equals(logLik(fit.mle)[1], check.attributes=FALSE, tol=.001))
   expect_that(AIC(fit)[100], equals(AIC(fit.mle), check.attributes=FALSE, tol=.001))
   fit.mle <- glm(yy~X, family="binomial")
@@ -150,3 +150,50 @@ test_that("cv.grpreg() options work for binomial", {
   cvfit <- cv.grpreg(X, y, group=group, family="binomial")
   plot(cvfit, type="all")
 })  
+
+test_that("dfmax, gmax work", {
+  n <- 100
+  group <- rep(1:10, rep(3,10))
+  p <- length(group)
+  X <- matrix(rnorm(n*p),ncol=p)
+  y <- rnorm(n)
+  yy <- runif(n) > .5
+  
+  ## dfmax
+  dfmax <- 21
+  fit <- grpreg(X, y, group, penalty="grLasso", lambda.min=0, dfmax=dfmax)
+  nv <- sapply(predict(fit, type="vars"), length)
+  expect_true(max(head(nv, length(nv)-1)) <= dfmax)
+  expect_true(max(nv) > 3)
+  fit <- grpreg(X, y, group, penalty="gel", lambda.min=0, dfmax=dfmax)
+  nv <- sapply(predict(fit, type="vars"), length)
+  expect_true(max(head(nv, length(nv)-1)) <= dfmax)
+  expect_true(max(nv) > 3)
+  fit <- grpreg(X, yy, group, penalty="grLasso", family="binomial", lambda.min=0, dfmax=dfmax)
+  nv <- sapply(predict(fit, type="vars"), length)
+  expect_true(max(head(nv, length(nv)-1)) <= dfmax)
+  expect_true(max(nv) > 3)
+  fit <- grpreg(X, yy, group, penalty="gel", family="binomial", lambda.min=0, dfmax=dfmax)
+  nv <- sapply(predict(fit, type="vars"), length)
+  expect_true(max(head(nv, length(nv)-1)) <= dfmax)
+  expect_true(max(nv) > 3)
+  
+  ## gmax
+  gmax <- 7
+  fit <- grpreg(X, y, group, penalty="grLasso", lambda.min=0, gmax=gmax)
+  ng <- sapply(predict(fit, type="groups"), length)
+  expect_true(max(head(ng, length(ng)-1)) <= gmax)
+  expect_true(max(ng) > 2)
+  fit <- grpreg(X, y, group, penalty="gel", lambda.min=0, gmax=gmax)
+  ng <- sapply(predict(fit, type="groups"), length)
+  expect_true(max(head(ng, length(ng)-1)) <= gmax)
+  expect_true(max(ng) > 2)
+  fit <- grpreg(X, yy, group, penalty="grLasso", family="binomial", lambda.min=0, gmax=gmax)
+  ng <- sapply(predict(fit, type="groups"), length)
+  expect_true(max(head(ng, length(ng)-1)) <= gmax)
+  expect_true(max(ng) > 2)
+  fit <- grpreg(X, yy, group, penalty="gel", family="binomial", lambda.min=0, gmax=gmax)
+  ng <- sapply(predict(fit, type="groups"), length)
+  expect_true(max(head(ng, length(ng)-1)) <= gmax)
+  expect_true(max(ng) > 2)
+})
