@@ -1,6 +1,16 @@
 *   Minor change
 **  Major change
 
+2.6-0
+	** Various internal changes to make the package more efficient for
+	   large data sets
+
+2.5-0
+	** Added group exponential lasso method.
+	*  Added gmax option
+	*  Added nvars and ngroups option to predict
+	*  Modified appearance of summary.cv.grpreg display.
+
 2.4-0
 	** Added options in plot.cv.grpreg to plot estimates of r-squared,
 	   signal-to-noise ratio, scale parameter, and prediction error in
