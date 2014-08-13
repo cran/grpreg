@@ -1,6 +1,6 @@
-6cbbf2e0865065aae4b8039c620a3928 *DESCRIPTION
+c307e172a7a55607350ecff6833f1bac *DESCRIPTION
 090749fe586041f96ec300bbbe8ab9d0 *NAMESPACE
-f223684010cc3ffdecb939ffd0b1c5d8 *NEWS
+e5ce3e5e8143672fb98771164f450465 *NEWS
 874b78baa670bbfcdd5148434289065c *R/calcNullDev.R
 75da13abb4dda4630dd0a68626a5cb28 *R/cv.grpreg.R
 bd95d66e436835723e2a081a12e3fe65 *R/gBridge.R
@@ -11,7 +11,7 @@ ec77613c1b55257496413c66c2b55450 *R/grpreg.R
 b92ff192d75de6f91027214b4bb6321a *R/orthogonalize.R
 cff657bbe771c27265e364f03b5309bd *R/plot.R
 9ff630bf8d755da10af5f470e3b575a4 *R/plot.cv.R
-f1c173fcf5c6a2e8012ffb5363c5f113 *R/predict.R
+b6af6075c0958a34e6a0fb9de6eda79f *R/predict.R
 3c4d05ffa40bbcb45104a779c5a2659a *R/predict.cv.R
 ab65b5eb4b4f9207d1eab06a1d5257c5 *R/print.R
 bb917a7bcb7b5c76dae1fb72a8a8349d *R/select.R
@@ -23,7 +23,7 @@ cc9b3d3762c4a12f6cbbade5f8d98897 *data/birthwt.grpreg.RData
 bc411b7fdd47224f1c628140c037752b *inst/tests/agreement.R
 6db485fe469d92e2d7e19a2cf76f2535 *inst/tests/basic-functionality.R
 d90bf89ba5efc44eca170caece11e1ab *inst/tests/extra-features.R
-84829ada90989f908c8f31891ee56ae0 *inst/tests/multitask.R
+a263e6deda81b7c91e2ed18c453224ac *inst/tests/multitask.R
 ab1d0768d5b6a31bfd7f07ed27b29204 *inst/tests/standardization-orthogonalization.R
 32f9adf4deeefea3b86ff0c7ad7220ea *man/birthwt.grpreg.Rd
 08fc189a5704de4f75778b48e09b9c58 *man/cv.grpreg.Rd
@@ -37,13 +37,13 @@ c1726a0581723dd48eebdd6ad9ace2ae *man/grpreg.Rd
 d19dab9a6b10b467a31e6d4bbd611ccb *man/predict.Rd
 c41703a190727d6abe40b340deecc162 *man/select.grpreg.Rd
 a0d940f0dd6b2d9bda744a10737d737d *man/summary.cv.grpreg.Rd
-1b57db0ed6ce27e0486acc14377d126b *src/gdfit_binomial.c
-94e1df66a901897d6239986645ec055f *src/gdfit_gaussian.c
-c470c60309278fb7d227cc361030c9e7 *src/gdfit_poisson.c
+41d71ad42d2869b93ca30a489036a2e7 *src/gdfit_binomial.c
+d13d1b795b6a3c111b2b8dc48e0c7e68 *src/gdfit_gaussian.c
+c5120d1f9918e33c0ab8debc62720229 *src/gdfit_poisson.c
 ffa7d86d3625018f6c26d59431b6f446 *src/grpreg.c
-80c3b876afaf131d42d24b09ef0b6d1b *src/lcdfit_binomial.c
-68721e33d974b73499d770ea5a1dfa3d *src/lcdfit_gaussian.c
-bd759fd4c6b998c7a664460f1df94091 *src/lcdfit_poisson.c
+08c989f620d3ac2db3d803cf49a00036 *src/lcdfit_binomial.c
+022355a6718800e478980c0902d3c122 *src/lcdfit_gaussian.c
+7923f973e505da5b58873df06a84f919 *src/lcdfit_poisson.c
 bbabfbef510cc9c448da30b04cfa718a *src/maxprod.c
-15fa3e56f77fe4ca1a056af93822a736 *src/standardize.c
+0aba92392b2eb679975655192ea26a67 *src/standardize.c
 fb0f84e2740af3bd95680c0110186a4c *tests/test-all.R
