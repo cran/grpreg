@@ -1,11 +1,19 @@
 *   Minor change
 **  Major change
 
+2.8-1
+	*  Fixed bug for predict.grpreg(fit, type="nvars") or 
+	   type="ngroups" when scalar lambda value is passed
+	*  cv.grpreg now allows user to specify lambda (thanks to Vincent
+	   Arel-Bundock for suggesting this change)
+	*  Updated citations
+
 2.8-0
 	** More flexible interface through the 'group' argument:
            groups may now be out of order, and may be named rather
            than only consecutive integers
 	*  Fixed bug for multitask learning when number of outcomes = 2
+           (thank you to Aluma Dembo for pointing this out)
 	*  Cross-validation for multitask learning now respects the
            multivariate structure of the response matrix
 	*  summary.cv.grpreg now describes multitask learning models
