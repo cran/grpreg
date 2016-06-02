@@ -9,21 +9,21 @@ grpreg(X, y, group=1:ncol(X), penalty=c("grLasso", "grMCP", "grSCAD",
 "gel", "cMCP", "gBridge", "gLasso", "gMCP"), family=c("gaussian",
 "binomial", "poisson"), nlambda=100, lambda, lambda.min={if (nrow(X) >
 ncol(X)) 1e-4 else .05},  alpha=1, eps=.001, max.iter=1000, dfmax=p,
-gmax=J, gamma=3, tau=1/3, group.multiplier={if
-(strtrim(penalty,2)=="gr") sqrt(table(group[group!=0])) else rep(1,J)},
-warn=TRUE, ...) 
+gmax=J, gamma=ifelse(penalty=="grSCAD", 4, 3), tau=1/3,
+group.multiplier={if (strtrim(penalty,2)=="gr")
+sqrt(table(group[group!=0])) else rep(1,J)}, warn=TRUE, ...)
 }
 \arguments{
   \item{X}{The design matrix, without an intercept.  \code{grpreg}
     standardizes the data and includes an intercept by default.}
   \item{y}{The response vector, or a matrix in the case of multitask
     learning (see details).}
-  \item{group}{A vector of describing the grouping of the coefficients.
+  \item{group}{A vector describing the grouping of the coefficients.
     For greatest efficiency and least ambiguity (see details), it is
-    best if \code{group} is a vector of consecutive integers, although
-    unordered group and named groups are also allowed.  If there are
-    coefficients to be included in the model without being penalized,
-    assign them to group 0 (or \code{"0"}).}
+    best if \code{group} is a factor or vector of consecutive integers,
+    although unordered groups and character vectors are also allowed.
+    If there are coefficients to be included in the model without being
+    penalized, assign them to group 0 (or \code{"0"}).}
   \item{penalty}{The penalty to be applied to the model.  For group
     selection, one of \code{grLasso}, \code{grMCP}, or \code{grSCAD}.
     For bi-level selection, one of \code{gel} or \code{cMCP}.  See
@@ -33,11 +33,11 @@ warn=TRUE, ...)
   \item{nlambda}{The number of \code{lambda} values.  Default is 100.}
   \item{lambda}{A user supplied sequence of \code{lambda} values.
     Typically, this is left unspecified, and the function automatically
-    computes a grid of lambda values that ranges uniformly on the log 
+    computes a grid of lambda values that ranges uniformly on the log
     scale over the relevant range of lambda values.}
   \item{lambda.min}{The smallest value for \code{lambda}, as a fraction
     of \code{lambda.max}.  Default is .0001 if the number of observations
-    is larger than the number of covariates and .05 otherwise.} 
+    is larger than the number of covariates and .05 otherwise.}
   \item{alpha}{\code{grpreg} allows for both a group penalty and an L2
     (ridge) penalty; \code{alpha} controls the proportional weight of
     the regularization parameters of these two penalties.  The group
@@ -55,7 +55,8 @@ warn=TRUE, ...)
   \item{gmax}{Limit on the number of groups allowed to have nonzero
     elements.  If this limit is exceeded, the algorithm will exit early
     from the regularization path.}
-  \item{gamma}{Tuning parameter of the MCP penalty; defaults to 3.}
+  \item{gamma}{Tuning parameter of the group or composite MCP/SCAD
+    penalty (see details).  Default is 3 for MCP and 4 for SCAD.}
   \item{tau}{Tuning parameter for the group exponential lasso; defaults
     to 1/3.}
   \item{group.multiplier}{A vector of values representing multiplicative
@@ -110,11 +111,11 @@ warn=TRUE, ...)
   generalized linear model for the log-odds of an event.  For logistic
   regression models, some care is taken to avoid model saturation; the
   algorithm  may exit early in this setting.
-  
+
   For the bi-level selection methods, a locally approximated coordinate
   descent algorithm is employed.  For the group selection methods, group
   descent algorithms are employed.
-  
+
   The algorithms employed by \code{grpreg} are stable and generally
   converge quite rapidly to values close to the solution.  However,
   especially when p is large compared with n, \code{grpreg} may fail to
@@ -180,19 +181,19 @@ warn=TRUE, ...)
     bi-level variable selection.  \emph{Statistics and its interface},
     \strong{2}: 369-380.
     \url{myweb.uiowa.edu/pbreheny/publications/Breheny2009.pdf}
-    
+
     \item Huang J., Breheny, P. and Ma, S. (2012). A selective
     review of group selection in high dimensional
     models. \emph{Statistical Science}, \strong{27}: 481-499.
     \url{myweb.uiowa.edu/pbreheny/publications/Huang2012.pdf}
-    
+
     \item Breheny, P. and Huang, J. (2015) Group descent algorithms for
     nonconvex penalized linear and logistic regression models with grouped
-    predictors.  \emph{Statistics and Computing}, 25: 173-187.
+    predictors.  \emph{Statistics and Computing}, \strong{25}: 173-187.
     \url{www.springerlink.com/openurl.asp?genre=article&id=doi:10.1007/s11222-013-9424-2}
-    
-    \item Breheny, P. (to appear) The group exponential lasso for bi-level
-    variable selection. Biometrics.
+
+    \item Breheny, P. (2015) The group exponential lasso for bi-level
+    variable selection. \emph{Biometrics}, \strong{71}: 731-740.
     \url{http://dx.doi.org/10.1111/biom.12300}
   }
 }
@@ -202,36 +203,38 @@ warn=TRUE, ...)
   \code{\link[=plot.grpreg]{plot}} and
   \code{\link[=select.grpreg]{select}} methods.}
 \examples{
+# Birthweight data
+data(Birthwt)
+X <- Birthwt$X
+group <- Birthwt$group
+
 ## Linear regression
-data(birthwt.grpreg)
-X <- as.matrix(birthwt.grpreg[,-1:-2])
-y <- birthwt.grpreg$bwt
-group <- c(1,1,1,2,2,2,3,3,4,5,5,6,7,8,8,8)
-fit <- grpreg(X,y,group,penalty="grLasso")
+y <- Birthwt$bwt
+fit <- grpreg(X, y, group, penalty="grLasso")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="grMCP")
+fit <- grpreg(X, y, group, penalty="grMCP")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="grSCAD")
+fit <- grpreg(X, y, group, penalty="grSCAD")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="gel")
+fit <- grpreg(X, y, group, penalty="gel")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="cMCP")
+fit <- grpreg(X, y, group, penalty="cMCP")
 plot(fit)
-select(fit,"AIC")
+select(fit, "AIC")
 
 ## Logistic regression
-y <- birthwt.grpreg$low
-fit <- grpreg(X,y,group,penalty="grLasso", family="binomial")
+y <- Birthwt$low
+fit <- grpreg(X, y, group, penalty="grLasso", family="binomial")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="grMCP", family="binomial")
+fit <- grpreg(X, y, group, penalty="grMCP", family="binomial")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="grSCAD", family="binomial")
+fit <- grpreg(X, y, group, penalty="grSCAD", family="binomial")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="gel", family="binomial")
+fit <- grpreg(X, y, group, penalty="gel", family="binomial")
 plot(fit)
-fit <- grpreg(X,y,group,penalty="cMCP", family="binomial")
+fit <- grpreg(X, y, group, penalty="cMCP", family="binomial")
 plot(fit)
-select(fit,"BIC")
+select(fit, "BIC")
 
 ## Multitask learning
 ## Simulated example
@@ -246,4 +249,3 @@ fit <- grpreg(X, y)
 fit$group
 plot(fit)
 }
-\keyword{models}
