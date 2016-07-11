@@ -1,8 +1,8 @@
 Package: grpreg
 Title: Regularization Paths for Regression Models with Grouped
         Covariates
-Version: 3.0-1
-Date: 2016-06-06
+Version: 3.0-2
+Date: 2016-07-11
 Author: Patrick Breheny
 Maintainer: Patrick Breheny <patrick-breheny@uiowa.edu>
 Depends: R (>= 2.13.0), Matrix
@@ -14,8 +14,8 @@ Description: Efficient algorithms for fitting the regularization path of
  group SCAD as well as bi-level selection methods such as the group
  exponential lasso, the composite MCP, and the group bridge.
 BugReports: http://github.com/pbreheny/grpreg/issues
-License: GPL-2
+License: GPL-3
 NeedsCompilation: yes
-Packaged: 2016-06-06 19:28:28 UTC; pbreheny
+Packaged: 2016-07-11 20:21:48 UTC; pbreheny
 Repository: CRAN
-Date/Publication: 2016-06-06 23:32:21
+Date/Publication: 2016-07-11 22:56:52
