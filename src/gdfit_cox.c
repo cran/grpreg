@@ -1,22 +1,19 @@
 #include <math.h>
 #include <string.h>
-#include "Rinternals.h"
-#include "R_ext/Rdynload.h"
+#include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include <R.h>
 #include <R_ext/Applic.h>
-int checkConvergence(double *beta, double *beta_old, double eps, int l, int J);
 double crossprod(double *x, double *y, int n, int j);
 double norm(double *x, int p);
 double S(double z, double l);
 double F(double z, double l1, double l2, double gamma);
 double Fs(double z, double l1, double l2, double gamma);
-SEXP cleanupCox(double *h, double *a, double *r, int *e, double *eta, double *haz,
-		double *rsk, SEXP beta, SEXP Dev, SEXP iter, SEXP Eta, SEXP df);
 
 // Group descent update -- cox
 void gd_cox(double *b, double *x, double *r, double *eta, double v, int g,
 	    int *K1, int n, int l, int p, const char *penalty, double lam1,
-	    double lam2, double gamma, SEXP df, double *a) {
+	    double lam2, double gamma, SEXP df, double *a, double *maxChange) {
 
   // Calculate z
   int K = K1[g+1] - K1[g];
@@ -34,6 +31,7 @@ void gd_cox(double *b, double *x, double *r, double *eta, double v, int g,
     for (int j=K1[g]; j<K1[g+1]; j++) {
       b[l*p+j] = len * z[j-K1[g]] / z_norm;
       double shift = b[l*p+j]-a[j];
+      if (fabs(shift) > maxChange[0]) maxChange[0] = fabs(shift);
       for (int i=0; i<n; i++) {
 	double si = shift*x[j*n+i];
 	r[i] -= si;
@@ -65,6 +63,7 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
   double alpha = REAL(alpha_)[0];
   double eps = REAL(eps_)[0];
   int max_iter = INTEGER(max_iter_)[0];
+  int tot_iter = 0;
   double gamma = REAL(gamma_)[0];
   double *m = REAL(group_multiplier);
   int dfmax = INTEGER(dfmax_)[0];
@@ -74,6 +73,7 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
 
   // Outcome
   SEXP res, beta, Loss, iter, df, Eta;
+  PROTECT(res = allocVector(VECSXP, 5));
   PROTECT(beta = allocVector(REALSXP, L*p));
   for (int j=0; j<(L*p); j++) REAL(beta)[j] = 0;
   PROTECT(iter = allocVector(INTSXP, L));
@@ -96,8 +96,8 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
   double *eta = Calloc(n, double);
   int *e = Calloc(J, int);
   for (int g=0; g<J; g++) e[g] = 0;
-  int converged, lstart, ng, nv, violations;
-  double shift, l1, l2, nullDev, v, s;
+  int lstart, ng, nv, violations;
+  double shift, l1, l2, nullDev, v, s, maxChange;
 
   // Initialization
   // If lam[0]=lam_max, skip lam[0] -- closed form sol'n available
@@ -128,16 +128,16 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
 	  nv = nv + (K1[g+1]-K1[g]);
 	}
       }
-      if (ng > gmax | nv > dfmax) {
-	for (int ll=l; ll<L; ll++) INTEGER(iter)[ll] = NA_INTEGER;
-	res = cleanupCox(h, a, r, e, eta, haz, rsk, beta, Loss, iter, Eta, df);
-	return(res);
+      if (ng > gmax | nv > dfmax | tot_iter == max_iter) {
+        for (int ll=l; ll<L; ll++) INTEGER(iter)[ll] = NA_INTEGER;
+        break;
       }
     }
 
-    while (INTEGER(iter)[l] < max_iter) {
-      while (INTEGER(iter)[l] < max_iter) {
+    while (tot_iter < max_iter) {
+      while (tot_iter < max_iter) {
 	INTEGER(iter)[l]++;
+        tot_iter++;
 	REAL(Loss)[l] = 0;
 	REAL(df)[l] = 0;
 	
@@ -168,13 +168,15 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
 	if (REAL(Loss)[l]/nullDev < .01) {
 	  if (warn) warning("Model saturated; exiting...");
 	  for (int ll=l; ll<L; ll++) INTEGER(iter)[ll] = NA_INTEGER;
-	  res = cleanupCox(h, a, r, e, eta, haz, rsk, beta, Loss, iter, Eta, df);
-	  return(res);
+          tot_iter = max_iter;
+          break;
 	}
 
 	// Update unpenalized covariates
+        maxChange = 0;
 	for (int j=0; j<K0; j++) {
 	  shift = crossprod(X, r, n, j)/n;
+          if (fabs(shift) > maxChange) maxChange = fabs(shift);
 	  b[l*p+j] = shift + a[j];
 	  for (int i=0; i<n; i++) {
 	    double si = shift * X[n*j+i];
@@ -189,13 +191,12 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
 	  l1 = lam[l] * m[g] * alpha;
 	  l2 = lam[l] * m[g] * (1-alpha);
 	  if (e[g]) gd_cox(b, X, r, eta, v, g, K1, n, l, p, penalty, l1, l2,
-			   gamma, df, a);
+			   gamma, df, a, &maxChange);
 	}
 
 	// Check convergence
-	converged = checkConvergence(b, a, eps, l, p);
-	for (int j=0; j<p; j++) a[j] = b[l*p+j];
-	if (converged) break;
+        for (int j=0; j<p; j++) a[j] = b[l*p+j];
+        if (maxChange < eps) break;
       }
 
       // Scan for violations
@@ -204,7 +205,7 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
 	if (e[g]==0) {
 	  l1 = lam[l] * m[g] * alpha;
 	  l2 = lam[l] * m[g] * (1-alpha);
-	  gd_cox(b, X, r, eta, v, g, K1, n, l, p, penalty, l1, l2, gamma, df, a);
+	  gd_cox(b, X, r, eta, v, g, K1, n, l, p, penalty, l1, l2, gamma, df, a, &maxChange);
 	  if (b[l*p+K1[g]] != 0) {
 	    e[g] = 1;
 	    violations++;
@@ -219,6 +220,18 @@ SEXP gdfit_cox(SEXP X_, SEXP d_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP lambda,
       for (int j=0; j<p; j++) a[j] = b[l*p+j];
     }
   }
-  res = cleanupCox(h, a, r, e, eta, haz, rsk, beta, Loss, iter, Eta, df);
+  Free(h);
+  Free(a);
+  Free(r);
+  Free(e);
+  Free(eta);
+  Free(haz);
+  Free(rsk);
+  SET_VECTOR_ELT(res, 0, beta);
+  SET_VECTOR_ELT(res, 1, iter);
+  SET_VECTOR_ELT(res, 2, df);
+  SET_VECTOR_ELT(res, 3, Loss);
+  SET_VECTOR_ELT(res, 4, Eta);
+  UNPROTECT(6);
   return(res);
 }

@@ -1,10 +1,9 @@
 #include <math.h>
 #include <string.h>
-#include "Rinternals.h"
-#include "R_ext/Rdynload.h"
+#include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include <R.h>
 #include <R_ext/Applic.h>
-int checkConvergence(double *beta, double *beta_old, double eps, int l, int J);
 double crossprod(double *x, double *y, int n, int j);
 double norm(double *x, int p);
 double S(double z, double l);
@@ -13,14 +12,14 @@ double Fs(double z, double l1, double l2, double gamma);
 double MCP(double theta, double l, double a);
 double dMCP(double theta, double l, double a);
 double gLoss(double *r, int n);
-SEXP cleanupG(double *a, double *r, int *e, SEXP beta, SEXP iter, SEXP df, SEXP loss);
 
 // Groupwise local coordinate descent updates
-void gLCD_gaussian(double *b, const char *penalty, double *x, double *r, int g, int *K1, int n, int l, int p, double lam1, double lam2, double gamma, double tau, SEXP df, double *a, double delta, int *e)
-{
+void gLCD_gaussian(double *b, const char *penalty, double *x, double *r, int g, int *K1, int n, int l, int p, double lam1, double lam2, double gamma, double tau, SEXP df, double *a, double delta, int *e, double *maxChange) {
+
   // Make initial local approximation
   int K = K1[g+1] - K1[g];
   double sG = 0; // Sum of inner penalties for group
+  double shift;
   if (strcmp(penalty, "gel")==0) for (int j=K1[g]; j<K1[g+1]; j++) sG = sG + fabs(a[j]);
   if (strcmp(penalty, "cMCP")==0) {
     lam1 = sqrt(lam1);
@@ -32,7 +31,9 @@ void gLCD_gaussian(double *b, const char *penalty, double *x, double *r, int g, 
     if (sG < delta) {
       for (int j=K1[g]; j<K1[g+1]; j++) {
 	b[l*p+j] = 0;
-	for (int i=0; i<n; i++) r[i] = r[i] - (b[l*p+j] - a[j]) * x[n*j+i];
+        shift = b[l*p+j] - a[j];
+        if (fabs(shift) > maxChange[0]) maxChange[0] = fabs(shift);
+	for (int i=0; i<n; i++) r[i] = r[i] - shift * x[n*j+i];
       }
       return;
     }
@@ -53,8 +54,9 @@ void gLCD_gaussian(double *b, const char *penalty, double *x, double *r, int g, 
       b[l*p+j] = S(z, ljk) / (1+lam2);
 
       // Update r
-      double shift = b[l*p+j] - a[j];
+      shift = b[l*p+j] - a[j];
       if (shift != 0) {
+        if (fabs(shift) > maxChange[0]) maxChange[0] = fabs(shift);
 	for (int i=0; i<n; i++) r[i] -= shift*x[n*j+i];
 	if (strcmp(penalty, "gBridge")==0) sG = sG + fabs(b[l*p+j]) - fabs(a[j]);
 	if (strcmp(penalty, "gel")==0) sG = sG + fabs(b[l*p+j]) - fabs(a[j]);
@@ -124,6 +126,7 @@ SEXP lcdfit_gaussian(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP l
   double gamma = REAL(gamma_)[0];
   double tau = REAL(tau_)[0];
   int max_iter = INTEGER(max_iter_)[0];
+  int tot_iter = 0;
   double *m = REAL(group_multiplier);
   int dfmax = INTEGER(dfmax_)[0];
   int gmax = INTEGER(gmax_)[0];
@@ -131,6 +134,7 @@ SEXP lcdfit_gaussian(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP l
 
   // Outcome
   SEXP res, beta, iter, df, loss;
+  PROTECT(res = allocVector(VECSXP, 4));
   PROTECT(beta = allocVector(REALSXP, L*p));
   for (int j=0; j<(L*p); j++) REAL(beta)[j] = 0;
   PROTECT(iter = allocVector(INTSXP, L));
@@ -157,16 +161,18 @@ SEXP lcdfit_gaussian(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP l
     for (int j=0; j<p; j++) e[j] = 0;
     for (int i=0; i<n; i++) r[i] = y[i];
   }
-  int converged, lstart, ng, nv, violations;
-  double shift, l1, l2;
+  int lstart, ng, nv, violations;
+  double shift, l1, l2, maxChange;
 
   // If lam[0]=lam_max, skip lam[0] -- closed form sol'n available
+  double rss = gLoss(r,n);
   if (user) {
     lstart = 0;
   } else {
-    REAL(loss)[0] = gLoss(r,n);
+    REAL(loss)[0] = rss;
     lstart = 1;
   }
+  double sdy = sqrt(rss/n);
 
   // Path
   for (int l=lstart; l<L; l++) {
@@ -184,22 +190,23 @@ SEXP lcdfit_gaussian(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP l
 	}
 	if (nv != nv_old) ng++;
       }
-      if (ng > gmax | nv > dfmax) {
+      if (ng > gmax | nv > dfmax | tot_iter == max_iter) {
 	for (int ll=l; ll<L; ll++) INTEGER(iter)[ll] = NA_INTEGER;
-	res = cleanupG(a, r, e, beta, iter, df, loss);
-	return(res);
+        break;
       }
     }
 
-    while (INTEGER(iter)[l] < max_iter) {
-      while (INTEGER(iter)[l] < max_iter) {
-	converged = 0;
+    while (tot_iter < max_iter) {
+      while (tot_iter < max_iter) {
 	INTEGER(iter)[l]++;
+        tot_iter++;
 	REAL(df)[l] = 0;
 
 	// Update unpenalized covariates
+        maxChange = 0;
 	for (int j=0; j<K0; j++) {
 	  shift = crossprod(X, r, n, j)/n;
+          if (fabs(shift) > maxChange) maxChange = fabs(shift);
 	  b[l*p+j] = shift + a[j];
 	  for (int i=0; i<n; i++) r[i] -= shift * X[n*j+i];
 	  REAL(df)[l]++;
@@ -209,16 +216,12 @@ SEXP lcdfit_gaussian(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP l
 	for (int g=0; g<J; g++) {
 	  l1 = lam[l] * m[g] * alpha;
 	  l2 = lam[l] * m[g] * (1-alpha);
-	  gLCD_gaussian(b, penalty, X, r, g, K1, n, l, p, l1, l2, gamma, tau, df, a, delta, e);
+	  gLCD_gaussian(b, penalty, X, r, g, K1, n, l, p, l1, l2, gamma, tau, df, a, delta, e, &maxChange);
 	}
 
 	// Check for convergence      
-	if (checkConvergence(b, a, eps, l, p)) {
-	  converged  = 1;
-	  REAL(loss)[l] = gLoss(r,n);
-	  break;
-	}
-	for (int j=0; j<p; j++) a[j] = b[l*p+j];
+        for (int j=0; j<p; j++) a[j] = b[l*p+j];
+        if (maxChange < eps*sdy) break;
       }
 
       // Scan for violations
@@ -236,6 +239,13 @@ SEXP lcdfit_gaussian(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP l
       for (int j=0; j<p; j++) a[j] = b[l*p+j];
     }
   }
-  res = cleanupG(a, r, e, beta, iter, df, loss);
+  Free(a);
+  Free(r);
+  Free(e);
+  SET_VECTOR_ELT(res, 0, beta);
+  SET_VECTOR_ELT(res, 1, iter);
+  SET_VECTOR_ELT(res, 2, df);
+  SET_VECTOR_ELT(res, 3, loss);
+  UNPROTECT(5);
   return(res);
 }

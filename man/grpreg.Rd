@@ -6,12 +6,13 @@
   linear and logistic regression models.}
 \usage{
 grpreg(X, y, group=1:ncol(X), penalty=c("grLasso", "grMCP", "grSCAD",
-"gel", "cMCP", "gBridge", "gLasso", "gMCP"), family=c("gaussian",
-"binomial", "poisson"), nlambda=100, lambda, lambda.min={if (nrow(X) >
-ncol(X)) 1e-4 else .05},  alpha=1, eps=.001, max.iter=1000, dfmax=p,
+"gel", "cMCP"), family=c("gaussian", "binomial", "poisson"),
+nlambda=100, lambda, lambda.min={if (nrow(X) > ncol(X)) 1e-4 else .05},
+log.lambda = TRUE, alpha=1, eps=1e-4, max.iter=10000, dfmax=p,
 gmax=length(unique(group)), gamma=ifelse(penalty == "grSCAD", 4, 3),
-tau = 1/3, group.multiplier, warn=TRUE, ...)
+tau = 1/3, group.multiplier, warn=TRUE, returnX = FALSE, ...)
 }
+
 \arguments{
   \item{X}{The design matrix, without an intercept.  \code{grpreg}
     standardizes the data and includes an intercept by default.}
@@ -35,8 +36,11 @@ tau = 1/3, group.multiplier, warn=TRUE, ...)
     computes a grid of lambda values that ranges uniformly on the log
     scale over the relevant range of lambda values.}
   \item{lambda.min}{The smallest value for \code{lambda}, as a fraction
-    of \code{lambda.max}.  Default is .0001 if the number of observations
-    is larger than the number of covariates and .05 otherwise.}
+    of \code{lambda.max}.  Default is .0001 if the number of
+    observations is larger than the number of covariates and .05
+    otherwise.}
+  \item{log.lambda}{Whether compute the grid values of lambda on log
+    scale (default) or linear scale.}
   \item{alpha}{\code{grpreg} allows for both a group penalty and an L2
     (ridge) penalty; \code{alpha} controls the proportional weight of
     the regularization parameters of these two penalties.  The group
@@ -44,10 +48,10 @@ tau = 1/3, group.multiplier, warn=TRUE, ...)
     the regularization parameter of the ridge penalty is
     \code{lambda*(1-alpha)}.  Default is 1: no ridge penalty.}
   \item{eps}{Convergence threshhold.  The algorithm iterates until the
-    change (on the standardized scale) in any coefficient is less than
-    \code{eps}.  Default is \code{.001}.  See details.}
-  \item{max.iter}{Maximum number of iterations.  Default is 1000.  See
-    details.}
+    RMSD for the change in linear predictors for each coefficient is
+    less than \code{eps}.  Default is \code{1e-4}.  See details.}
+  \item{max.iter}{Maximum number of iterations (total across entire
+    path). Default is 10000.  See details.}
   \item{dfmax}{Limit on the number of parameters allowed to be nonzero.
     If this limit is exceeded, the algorithm will exit early from the
     regularization path.}
@@ -66,21 +70,23 @@ tau = 1/3, group.multiplier, warn=TRUE, ...)
     (i.e., no adjustment for group size) for bi-level selection.}
   \item{warn}{Should the function give a warning if it fails to
     converge?  Default is TRUE.  See details.}
+  \item{returnX}{Return the standardized design matrix (and associated
+    group structure information)?  Default is FALSE.}
   \item{...}{Arguments passed to other functions (such as gBridge).}
 }
 \details{
   There are two general classes of methods involving grouped penalties:
   those that carry out bi-level selection and those that carry out group
-  selection.  Bi-level means carrying out variable selection at the group
-  level as well as the level of individual covariates (i.e., selecting
-  important groups as well as important members of those groups).  Group
-  selection selects important groups, and not members within the group --
-  i.e., within a group, coefficients will either all be zero or all
-  nonzero.  The \code{grLasso}, \code{grMCP}, and \code{grSCAD}
-  penalties carry out group selection, while the \code{gel} and
-  \code{cMCP} penalties carry out bi-level selection.  For bi-level
-  selection, see also the \code{\link{gBridge}} function.  For
-  historical reasons and backwards compatibility, some of these
+  selection.  Bi-level means carrying out variable selection at the
+  group level as well as the level of individual covariates (i.e.,
+  selecting important groups as well as important members of those
+  groups).  Group selection selects important groups, and not members
+  within the group -- i.e., within a group, coefficients will either all
+  be zero or all nonzero.  The \code{grLasso}, \code{grMCP}, and
+  \code{grSCAD} penalties carry out group selection, while the
+  \code{gel} and \code{cMCP} penalties carry out bi-level selection.
+  For bi-level selection, see also the \code{\link{gBridge}} function.
+  For historical reasons and backwards compatibility, some of these
   penalties have aliases; e.g., \code{gLasso} will do the same thing as
   \code{grLasso}, but users are encouraged to use \code{grLasso}.
 
@@ -161,8 +167,8 @@ tau = 1/3, group.multiplier, warn=TRUE, ...)
   \item{lambda}{The sequence of \code{lambda} values in the path.}
   \item{alpha}{Same as above.}
   \item{loss}{A vector containing either the residual sum of squares
-  (\code{"gaussian"}) or negative log-likelihood (\code{"binomial"}) of
-  the fitted model at each value of \code{lambda}.}
+    (\code{"gaussian"}) or negative log-likelihood (\code{"binomial"})
+    of the fitted model at each value of \code{lambda}.}
   \item{n}{Number of observations.}
   \item{penalty}{Same as above.}
   \item{df}{A vector of length \code{nlambda} containing estimates of

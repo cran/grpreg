@@ -1,7 +1,7 @@
 #include <math.h>
 #include <string.h>
-#include "Rinternals.h"
-#include "R_ext/Rdynload.h"
+#include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include <R.h>
 #include <R_ext/Applic.h>
 double crossprod(double *X, double *y, int n, int j);
@@ -27,7 +27,7 @@ SEXP maxprod(SEXP X_, SEXP y_, SEXP K_, SEXP m_) {
     }
   }
 
-  // Return list
+  // Return
   UNPROTECT(1);
   return(zmax);
 }
@@ -56,7 +56,7 @@ SEXP maxgrad(SEXP X_, SEXP y_, SEXP K_, SEXP m_) {
     Free(Z);
   }
 
-  // Return list
+  // Return
   UNPROTECT(1);
   return(zmax);
 }

@@ -1,4 +1,4 @@
-setupLambda <- function(X, y, group, family, penalty, alpha, lambda.min, nlambda, group.multiplier) {
+setupLambda <- function(X, y, group, family, penalty, alpha, lambda.min, log.lambda, nlambda, group.multiplier) {
   ## Fit to unpenalized covariates
   n <- length(y)
   K <- table(group)
@@ -22,17 +22,24 @@ setupLambda <- function(X, y, group, family, penalty, alpha, lambda.min, nlambda
     zmax <- .Call("maxprod", X, r, K1, as.double(group.multiplier)) / n
   }
   lambda.max <- zmax/alpha
-  
-  if (lambda.min==0) {
-    lambda <- c(exp(seq(log(lambda.max), log(.001*lambda.max), length=nlambda-1)), 0)
-  } else {
-    lambda <- exp(seq(log(lambda.max), log(lambda.min*lambda.max), length=nlambda))
+
+  if (log.lambda) { # lambda sequence on log-scale
+    if (lambda.min==0) {
+      lambda <- c(exp(seq(log(lambda.max), log(.001*lambda.max), length=nlambda-1)), 0)
+    } else {
+      lambda <- exp(seq(log(lambda.max), log(lambda.min*lambda.max), length=nlambda))
+    }
+  } else { # lambda sequence on linear-scale
+    if (lambda.min==0) {
+      lambda <- c(seq(lambda.max, 0.001*lambda.max, length = nlambda-1), 0)
+    } else {
+      lambda <- seq(lambda.max, lambda.min*lambda.max, length = nlambda)
+    }
   }
   lambda
 }
 
-setupLambda.gBridge <- function(X, y, group, family, alpha, lambda.min, lambda.max, nlambda, gamma, group.multiplier)
-{
+setupLambda.gBridge <- function(X, y, group, family, alpha, lambda.min, lambda.max, nlambda, gamma, group.multiplier) {
   ## Fit to unpenalized covariates
   n <- length(y)
   ind <- which(group!=0)
@@ -41,7 +48,7 @@ setupLambda.gBridge <- function(X, y, group, family, alpha, lambda.min, lambda.m
   } else {
     fit <- glm(y~1, family=family)
   }
-  
+
   ## Guess lambda.max
   if (missing(lambda.max)) {
     if (family=="gaussian") {
@@ -51,11 +58,10 @@ setupLambda.gBridge <- function(X, y, group, family, alpha, lambda.min, lambda.m
       z <- crossprod(X[,ind], fit$weights * residuals(fit, "working")) / n
       a <- .2
     }
-    maxGradient <- tapply(abs(z), group[ind],max)*a^(1-gamma)/gamma
-    lambda.max <- max(maxGradient/group.multiplier) / alpha
+    lambda.max <- max(abs(z)/group.multiplier)*a^(1-gamma)/(gamma*alpha)
   }
   if (lambda.min==0) {
-    lambda <- c(exp(seq(log(lambda.max), log(.001*lambda.max), len=nlambda-1)),0)                  
+    lambda <- c(exp(seq(log(lambda.max), log(.001*lambda.max), len=nlambda-1)),0)
   } else {
     lambda <- exp(seq(log(lambda.max),log(lambda.min*lambda.max),len=nlambda))
   }

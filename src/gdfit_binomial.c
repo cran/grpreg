@@ -1,10 +1,9 @@
 #include <math.h>
 #include <string.h>
-#include "Rinternals.h"
-#include "R_ext/Rdynload.h"
+#include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include <R.h>
 #include <R_ext/Applic.h>
-int checkConvergence(double *beta, double *beta_old, double eps, int l, int J);
 double crossprod(double *x, double *y, int n, int j);
 double sum(double *x, int n);
 double norm(double *x, int p);
@@ -13,10 +12,9 @@ double F(double z, double l1, double l2, double gamma);
 double Fs(double z, double l1, double l2, double gamma);
 double MCP(double theta, double l, double a);
 double dMCP(double theta, double l, double a);
-SEXP cleanupB(double *a, double *r, int *e, double *eta, SEXP beta0, SEXP beta, SEXP iter, SEXP df, SEXP Dev);
 
 // Group descent update -- binomial
-void gd_binomial(double *b, double *x, double *r, double *eta, int g, int *K1, int n, int l, int p, const char *penalty, double lam1, double lam2, double gamma, SEXP df, double *a) {
+void gd_binomial(double *b, double *x, double *r, double *eta, int g, int *K1, int n, int l, int p, const char *penalty, double lam1, double lam2, double gamma, SEXP df, double *a, double *maxChange) {
 
   // Calculate z
   int K = K1[g+1] - K1[g];
@@ -35,6 +33,7 @@ void gd_binomial(double *b, double *x, double *r, double *eta, int g, int *K1, i
     for (int j=K1[g]; j<K1[g+1]; j++) {
       b[l*p+j] = len * z[j-K1[g]] / z_norm;
       double shift = b[l*p+j]-a[j];
+      if (fabs(shift) > maxChange[0]) maxChange[0] = fabs(shift);
       for (int i=0; i<n; i++) {
 	double si = shift*x[j*n+i];
 	r[i] -= si;
@@ -66,6 +65,7 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
   double alpha = REAL(alpha_)[0];
   double eps = REAL(eps_)[0];
   int max_iter = INTEGER(max_iter_)[0];
+  int tot_iter = 0;
   double gamma = REAL(gamma_)[0];
   double *m = REAL(group_multiplier);
   int dfmax = INTEGER(dfmax_)[0];
@@ -75,6 +75,7 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
 
   // Outcome
   SEXP res, beta0, beta, iter, df, Dev;
+  PROTECT(res = allocVector(VECSXP, 5));
   PROTECT(beta0 = allocVector(REALSXP, L));
   for (int i=0; i<L; i++) REAL(beta0)[i] = 0;
   PROTECT(beta = allocVector(REALSXP, L*p));
@@ -98,7 +99,7 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
   int *e = Calloc(J, int);
   for (int g=0; g<J; g++) e[g] = 0;
   int converged, lstart, ng, nv, violations;
-  double shift, l1, l2;
+  double shift, l1, l2, maxChange;
 
   // Initialization
   double ybar = sum(y, n)/n;
@@ -132,17 +133,17 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
 	  nv = nv + (K1[g+1]-K1[g]);
 	}
       }
-      if (ng > gmax | nv > dfmax) {
+      if (ng > gmax | nv > dfmax | tot_iter == max_iter) {
 	for (int ll=l; ll<L; ll++) INTEGER(iter)[ll] = NA_INTEGER;
-	res = cleanupB(a, r, e, eta, beta0, beta, iter, df, Dev);
-	return(res);
+        break;
       }
     }
 
-    while (INTEGER(iter)[l] < max_iter) {
-      while (INTEGER(iter)[l] < max_iter) {
+    while (tot_iter < max_iter) {
+      while (tot_iter < max_iter) {
 	converged = 0;
 	INTEGER(iter)[l]++;
+        tot_iter++;
 
 	// Approximate L
 	REAL(Dev)[l] = 0;
@@ -162,8 +163,8 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
 	if (REAL(Dev)[l]/nullDev < .01) {
 	  if (warn) warning("Model saturated; exiting...");
 	  for (int ll=l; ll<L; ll++) INTEGER(iter)[ll] = NA_INTEGER;
-	  res = cleanupB(a, r, e, eta, beta0, beta, iter, df, Dev);
-	  return(res);
+          tot_iter = max_iter;
+          break;
 	}
 
 	// Update intercept
@@ -174,10 +175,12 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
 	  eta[i] += shift;
 	}
 	REAL(df)[l] = 1;
+        maxChange = fabs(shift);
 
 	// Update unpenalized covariates
 	for (int j=0; j<K0; j++) {
 	  shift = crossprod(X, r, n, j)/n;
+          if (fabs(shift) > maxChange) maxChange = fabs(shift);
 	  b[l*p+j] = shift + a[j];
 	  for (int i=0; i<n; i++) {
 	    double si = shift * X[n*j+i];
@@ -191,16 +194,13 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
 	for (int g=0; g<J; g++) {
 	  l1 = lam[l] * m[g] * alpha;
 	  l2 = lam[l] * m[g] * (1-alpha);
-	  if (e[g]) gd_binomial(b, X, r, eta, g, K1, n, l, p, penalty, l1, l2, gamma, df, a);
+	  if (e[g]) gd_binomial(b, X, r, eta, g, K1, n, l, p, penalty, l1, l2, gamma, df, a, &maxChange);
 	}
 
 	// Check convergence
-	if (checkConvergence(b, a, eps, l, p)) {
-	  converged  = 1;
-	  break;
-	}
 	a0 = b0[l];
 	for (int j=0; j<p; j++) a[j] = b[l*p+j];
+        if (maxChange < eps) break;
       }
 
       // Scan for violations
@@ -209,7 +209,7 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
 	if (e[g]==0) {
 	  l1 = lam[l] * m[g] * alpha;
 	  l2 = lam[l] * m[g] * (1-alpha);
-	  gd_binomial(b, X, r, eta, g, K1, n, l, p, penalty, l1, l2, gamma, df, a);
+	  gd_binomial(b, X, r, eta, g, K1, n, l, p, penalty, l1, l2, gamma, df, a, &maxChange);
 	  if (b[l*p+K1[g]] != 0) {
 	    e[g] = 1;
 	    violations++;
@@ -222,6 +222,15 @@ SEXP gdfit_binomial(SEXP X_, SEXP y_, SEXP penalty_, SEXP K1_, SEXP K0_, SEXP la
       for (int j=0; j<p; j++) a[j] = b[l*p+j];
     }
   }
-  res = cleanupB(a, r, e, eta, beta0, beta, iter, df, Dev);
+  Free(a);
+  Free(r);
+  Free(e);
+  Free(eta);
+  SET_VECTOR_ELT(res, 0, beta0);
+  SET_VECTOR_ELT(res, 1, beta);
+  SET_VECTOR_ELT(res, 2, iter);
+  SET_VECTOR_ELT(res, 3, df);
+  SET_VECTOR_ELT(res, 4, Dev);
+  UNPROTECT(6);
   return(res);
 }
