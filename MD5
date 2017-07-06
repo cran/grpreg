@@ -1,6 +1,6 @@
-397f77e0a4b0e86b8b332f26b7fe577c *DESCRIPTION
+85f560baef75866b3cd663cb33922b5a *DESCRIPTION
 848210a4d3d7f032b79a50a4313653a4 *NAMESPACE
-e47fe1fa66df3d7ce0f66f3468ea86b2 *NEWS
+18e791ce2df7404f59317b9fc8b2e207 *NEWS
 b07cd7901aae2d39db5b28745b1e674d *R/auc.R
 874b78baa670bbfcdd5148434289065c *R/calcNullDev.R
 6a5868a6655dd55bbe105232abc965a0 *R/cv.grpreg.R
@@ -37,15 +37,15 @@ cc9b3d3762c4a12f6cbbade5f8d98897 *data/birthwt.grpreg.RData
 8ad7df3853e567f28881ae1cf3274f8d *inst/CITATION
 bcf92625e8fa3dd20eed5a5227a44d89 *inst/doc/penalties.R
 1dab3493760ed71a39b66f5fdfe68a1c *inst/doc/penalties.Rnw
-37922febe453e44068521ab030ebe700 *inst/doc/penalties.pdf
+70614f36f4ae1989487729acb3a8cf9c *inst/doc/penalties.pdf
 dff2f275ace6f54f28b8a2d1f64ec756 *inst/doc/quick-start.R
 7a4f3bad3a715b0efea6db459517dfa8 *inst/doc/quick-start.Rnw
-252a9513e7721fa35f4ac56bc334e3cd *inst/doc/quick-start.pdf
+6616b8a19e85b3ce96095349b144e3e6 *inst/doc/quick-start.pdf
 5260a49d3366f6b0ea19c413ea022f2a *inst/tests/agreement.R
-241f7a82b14ba497a68785293ad547cd *inst/tests/basic-functionality.R
+205b08ed2c642d88bde5808752a77985 *inst/tests/basic-functionality.R
 54c712495a7cbf4b0feaeb7a56bc9af7 *inst/tests/coerce.R
 4ec1d3f294de12f6878e4e9dec678f26 *inst/tests/cv.R
-2c7132bdcbd235a1fe6065ca1e3ba70d *inst/tests/extra-features.R
+cc716adf4dad20926a7e73a1096d6e2e *inst/tests/extra-features.R
 5d1ad7eddf145ba8cfa8dd9393ef8215 *inst/tests/grpsurv.R
 a84b8500fc4ddb95e0610da6a5dc5050 *inst/tests/multitask.R
 548d76603ed7122dbe015a4265bdebdb *inst/tests/standardization-orthogonalization.R
@@ -69,7 +69,7 @@ ca8a4b0c4a6ffe3471e2c65bb2010c55 *man/predict.grpsurv.Rd
 178c0a68b9061b5a56fcf4b4363745ea *man/summary.cv.grpreg.Rd
 f2f2cb86896844c1326fa60605b7a716 *src/gdfit_binomial.c
 0cc7e47d6cf8f004dbcd14aeac9ee73a *src/gdfit_cox.c
-ea637c2f6f340c108be7ba4682a4eeb0 *src/gdfit_gaussian.c
+39d114d11d26d4aea2b397f5e1d36930 *src/gdfit_gaussian.c
 30039f0887c2a5306af905cc07edfe71 *src/gdfit_poisson.c
 fda088059efebfc2aab601f43cca7d2f *src/grpreg_init.c
 ba24ca2409a1eca3c4655926f5ab08c7 *src/lcdfit_binomial.c
