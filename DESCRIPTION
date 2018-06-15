@@ -1,8 +1,8 @@
 Package: grpreg
 Title: Regularization Paths for Regression Models with Grouped
         Covariates
-Version: 3.1-3
-Date: 2018-04-07
+Version: 3.1-4
+Date: 2018-06-15
 Author: Patrick Breheny [aut, cre], Yaohui Zeng [ctb]
 Maintainer: Patrick Breheny <patrick-breheny@uiowa.edu>
 Depends: R (>= 3.1.0), Matrix
@@ -16,6 +16,6 @@ Description: Efficient algorithms for fitting the regularization path of
 BugReports: http://github.com/pbreheny/grpreg/issues
 License: GPL-3
 NeedsCompilation: yes
-Packaged: 2018-04-07 12:38:47 UTC; pbreheny
+Packaged: 2018-06-15 20:33:25 UTC; pbreheny
 Repository: CRAN
-Date/Publication: 2018-04-08 11:13:01 UTC
+Date/Publication: 2018-06-15 20:56:34 UTC
