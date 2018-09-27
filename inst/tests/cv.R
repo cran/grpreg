@@ -31,17 +31,6 @@ cvfit <- cv.grpreg(X, y, group, family='poisson', penalty='gel')
 cvfit <- cv.grpreg(X, y, group, family='poisson', penalty='grLasso', nfolds=50)
 cvfit <- cv.grpreg(X, y, group, family='poisson', penalty='gel', nfolds=50)
 
-.test = "Cross-validation: cox"
-n <- 50
-group <- rep(0:3,4:1)
-p <- length(group)
-X <- matrix(rnorm(n*p),ncol=p)
-y <- cbind(rexp(n), rep(0:1, c(10, n-10)))
-cvfit <- cv.grpsurv(X, y, group, penalty='grLasso')
-cvfit <- cv.grpsurv(X, y, group, penalty='gel')
-cvfit <- cv.grpsurv(X, y, group, penalty='grLasso', nfolds=50)
-cvfit <- cv.grpsurv(X, y, group, penalty='gel', nfolds=50)
-
 .test = "Cross-validation: multitask learning"
 n <- 50
 group <- rep(0:4,5:1)
@@ -55,3 +44,14 @@ y <- rnorm(n) > 0
 cvfit <- cv.grpreg(X, y, group, family='binomial', returnY=TRUE, lambda.min=0.5)
 pe <- apply((cvfit$Y>0.5)!=y, 2, mean)
 check(pe, cvfit$pe, tol= .001)
+
+.test = "Cross-validation: p > n"
+n <- 75
+p <- 200
+X <- matrix(rnorm(n*p), n, p)
+mu <- exp(apply(X[,1:10], 1, sum))
+y <- rpois(n, mu)
+g <- rep(LETTERS[1:20], each=10)
+cvfit <- cv.grpreg(X, y, group=g)
+cvfit <- cv.grpreg(X, y>0, group=g, family='binomial')
+cvfit <- cv.grpreg(X, y, group=g, family='poisson')
