@@ -27,7 +27,7 @@ cv.grpsurv <- function(X, y, group, ..., nfolds=10, seed, fold, se=c('quick', 'b
     fold0 <- (n1 + 1:n0) %% nfolds
     fold1[fold1==0] <- nfolds
     fold0[fold0==0] <- nfolds
-    fold <- numeric(n)
+    fold <- integer(n)
     fold[fit$fail==1] <- sample(fold1)
     fold[fit$fail==0] <- sample(fold0)
   } else {
@@ -42,14 +42,14 @@ cv.grpsurv <- function(X, y, group, ..., nfolds=10, seed, fold, se=c('quick', 'b
   cv.args$warn <- FALSE
 
   for (i in 1:nfolds) {
-    if (trace) cat("Starting CV fold #",i,sep="","\n")
+    if (trace) cat("Starting CV fold #", i, sep="","\n")
     res <- cvf.surv(i, X, y, fold, cv.args)
     Y[fold==i, 1:res$nl] <- res$yhat
   }
 
   # Eliminate saturated lambda values, if any
   ind <- which(apply(is.finite(Y), 2, all))
-  Y <- Y[,ind]
+  Y <- Y[, ind]
   lambda <- fit$lambda[ind]
 
   # Return
@@ -58,7 +58,7 @@ cv.grpsurv <- function(X, y, group, ..., nfolds=10, seed, fold, se=c('quick', 'b
     cve <- apply(L, 2, sum)/sum(fit$fail)
     cvse <- apply(L, 2, sd)*sqrt(nrow(L))/sum(fit$fail)
   } else {
-    cve <- as.numeric(loss.grpsurv(y, Y))/sum(fit$fail)
+    cve <- as.double(loss.grpsurv(y, Y))/sum(fit$fail)
     cvse <- se.grpsurv(y, Y)/sum(fit$fail)
   }
   min <- which.min(cve)
