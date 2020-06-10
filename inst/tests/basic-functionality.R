@@ -1,4 +1,4 @@
-.test = "grpreg() reproduces simple linear regression"
+# grpreg() reproduces simple linear regression
 n <- 5
 p <- 1
 X <- matrix(rnorm(n*p), ncol=p)
@@ -9,24 +9,24 @@ nlam=100
 par(mfcol=c(3,2))
 gel <- coef(fit <- grpreg(X, y, group, penalty="gel", nlambda=nlam, lambda.min=0))[,nlam]
 plot(fit, main=fit$penalty)
-check(gel, reg)
+expect_equivalent(gel, reg)
 cMCP <- coef(fit <- grpreg(X, y, group, penalty="cMCP", nlambda=nlam, lambda.min=0))[,nlam]
 plot(fit, main=fit$penalty)
-check(cMCP, reg)
+expect_equivalent(cMCP, reg)
 bridge <- coef(fit <- gBridge(X, y, group, nlambda=nlam, lambda.min=0))[,1]
 plot(fit, main=fit$penalty)
-check(bridge, reg)
+expect_equivalent(bridge, reg)
 grLasso <- coef(fit <- grpreg(X, y, group, penalty="grLasso", nlambda=nlam, lambda.min=0))[,nlam]
 plot(fit, main=fit$penalty)
-check(grLasso, reg)
+expect_equivalent(grLasso, reg)
 grMCP <- coef(fit <- grpreg(X, y, group, penalty="grMCP", nlambda=nlam, lambda.min=0))[,nlam]
 plot(fit, main=fit$penalty)
-check(grMCP, reg)
+expect_equivalent(grMCP, reg)
 grSCAD <- coef(fit <- grpreg(X, y, group, penalty="grSCAD", nlambda=nlam, lambda.min=0))[,nlam]
 plot(fit, main=fit$penalty)
-check(grSCAD, reg)
+expect_equivalent(grSCAD, reg)
 
-.test = "grpreg reproduces linear regression"
+# grpreg reproduces linear regression
 n <- 50
 p <- 10
 X <- matrix(rnorm(n*p),ncol=p)
@@ -38,25 +38,25 @@ nlam=100
 par(mfcol=c(3,2))
 gel <- coef(fit <- grpreg(X, y, group, penalty="gel", nlambda=nlam, lambda.min=0, eps=1e-10))[,nlam]
 plot(fit, main=fit$penalty)
-check(gel, reg)
+expect_equivalent(gel, reg)
 cMCP <- coef(fit <- grpreg(X, y, group, penalty="cMCP", lambda.min=0, eps=1e-10))[,100]
 plot(fit, main=fit$penalty)
-check(cMCP, reg)
+expect_equivalent(cMCP, reg)
 bridge <- coef(fit <- gBridge(X, y, group, lambda.min=0, eps=1e-10))[,1]
 plot(fit, main=fit$penalty)
-check(bridge, reg)
+expect_equivalent(bridge, reg)
 grLasso <- coef(fit <- grpreg(X, y, group, penalty="grLasso", lambda.min=0, eps=1e-10))[,100]
 plot(fit, main=fit$penalty)
-check(grLasso, reg)
+expect_equivalent(grLasso, reg)
 grMCP <- coef(fit <- grpreg(X, y, group, penalty="grMCP", lambda.min=0, eps=1e-10))[,100]
 plot(fit, main=fit$penalty)
-check(grMCP, reg)
+expect_equivalent(grMCP, reg)
 grSCAD <- coef(fit <- grpreg(X, y, group, penalty="grSCAD", lambda.min=0, eps=1e-10))[,100]
 plot(fit, main=fit$penalty)
-check(grSCAD, reg)
-check(predict(fit, X)[,100], predict(fit.mle))
+expect_equivalent(grSCAD, reg)
+expect_equivalent(predict(fit, X)[,100], predict(fit.mle))
 
-.test = "grpreg reproduces simple logistic regression"
+# grpreg reproduces simple logistic regression
 n <- 20
 p <- 1
 X <- matrix(rnorm(n*p), ncol=p)
@@ -67,24 +67,24 @@ nlam <- 100
 par(mfcol=c(3,2))
 gel <- coef(fit <- grpreg(X, y, group, penalty="gel", nlambda=nlam, lambda.min=0, family="binomial", eps=1e-10))[,nlam]
 plot(fit, main=fit$penalty)
-check(gel, reg)
+expect_equivalent(gel, reg)
 cMCP <- coef(fit <- grpreg(X, y, group, penalty="cMCP", nlambda=nlam, lambda.min=0, family="binomial", gamma=9, eps=1e-10))[,nlam]
 plot(fit, main=fit$penalty)
-check(cMCP, reg)
+expect_equivalent(cMCP, reg)
 bridge <- coef(fit <- gBridge(X, y, group, lambda.min=0, nlambda=nlam, family="binomial", eps=1e-10))[,1]
 plot(fit, main=fit$penalty)
-check(bridge, reg)
+expect_equivalent(bridge, reg)
 grLasso <- coef(fit <- grpreg(X, y, group, penalty="grLasso", nlambda=nlam, lambda.min=0, family="binomial", eps=1e-10))[,nlam]
 plot(fit, main=fit$penalty)
-check(grLasso, reg)
+expect_equivalent(grLasso, reg)
 grMCP <- coef(fit <- grpreg(X, y, group, penalty="grMCP", nlambda=nlam, lambda.min=0, family="binomial", eps=1e-10))[,nlam]
 plot(fit, main=fit$penalty)
-check(grMCP, reg)
+expect_equivalent(grMCP, reg)
 grSCAD <- coef(fit <- grpreg(X, y, group, penalty="grSCAD", nlambda=nlam, lambda.min=0, family="binomial", eps=1e-10))[,nlam]
 plot(fit, main=fit$penalty)
-check(grSCAD, reg)
+expect_equivalent(grSCAD, reg)
 
-.test = "grpreg() reproduces logistic regression"
+# grpreg() reproduces logistic regression
 n <- 50
 group <- rep(0:3,1:4)
 p <- length(group)
@@ -95,26 +95,26 @@ reg <- coef(fit.mle)
 par(mfcol=c(3,2))
 gel <- coef(fit <- grpreg(X, y, group, penalty="gel", family="binomial", eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(gel, reg, tol=1e-6)
+expect_equivalent(gel, reg, tol=1e-6)
 cMCP <- coef(fit <- grpreg(X, y, group, penalty="cMCP", family="binomial", eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(cMCP, reg, tol=1e-6)
+expect_equivalent(cMCP, reg, tol=1e-6)
 bridge <- coef(fit <- gBridge(X, y, group, family="binomial", eps=1e-10, lambda.min=0))[,1]
 plot(fit, main=fit$penalty)
-check(bridge, reg, tol=1e-6)
+expect_equivalent(bridge, reg, tol=1e-6)
 grLasso <- coef(fit <- grpreg(X, y, group, penalty="grLasso", family="binomial", eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(grLasso, reg, tol=1e-6)
+expect_equivalent(grLasso, reg, tol=1e-6)
 grMCP <- coef(fit <- grpreg(X, y, group, penalty="grMCP", family="binomial", gamma=2, eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(grMCP, reg, tol=1e-6)
+expect_equivalent(grMCP, reg, tol=1e-6)
 grSCAD <- coef(fit <- grpreg(X, y, group, penalty="grSCAD", family="binomial", gamma=2.1, eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(grSCAD, reg, tol=1e-6)
-check(predict(fit, X)[,100], predict(fit.mle), tol=1e-6)
-check(predict(fit, X, type="response")[,100], predict(fit.mle, type="response"), tol=1e-6)
+expect_equivalent(grSCAD, reg, tol=1e-6)
+expect_equivalent(predict(fit, X)[,100], predict(fit.mle), tol=1e-6)
+expect_equivalent(predict(fit, X, type="response")[,100], predict(fit.mle, type="response"), tol=1e-6)
 
-.test = "grpreg() reproduces poisson regression"
+# grpreg() reproduces poisson regression
 n <- 50
 group <- rep(0:3,1:4)
 p <- length(group)
@@ -125,21 +125,21 @@ reg <- coef(fit.mle)
 par(mfcol=c(3,2))
 gel <- coef(fit <- grpreg(X, y, group, penalty="gel", family="poisson", eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(gel, reg)
+expect_equivalent(gel, reg)
 cMCP <- coef(fit <- grpreg(X, y, group, penalty="cMCP", family="poisson", eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(cMCP, reg)
+expect_equivalent(cMCP, reg)
 bridge <- coef(fit <- gBridge(X, y, group, family="poisson", eps=1e-10, lambda.min=0))[,1]
 plot(fit, main=fit$penalty)
-check(bridge, reg)
+expect_equivalent(bridge, reg)
 grLasso <- coef(fit <- grpreg(X, y, group, penalty="grLasso", family="poisson", eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(grLasso, reg)
+expect_equivalent(grLasso, reg)
 grMCP <- coef(fit <- grpreg(X, y, group, penalty="grMCP", family="poisson", gamma=2, eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(grMCP, reg)
+expect_equivalent(grMCP, reg)
 grSCAD <- coef(fit <- grpreg(X, y, group, penalty="grSCAD", family="poisson", gamma=2.1, eps=1e-10, lambda.min=0))[,100]
 plot(fit, main=fit$penalty)
-check(grSCAD, reg)
-check(predict(fit, X)[,100], predict(fit.mle))
-check(predict(fit, X, type="response")[,100], predict(fit.mle, type="response"))
+expect_equivalent(grSCAD, reg)
+expect_equivalent(predict(fit, X)[,100], predict(fit.mle))
+expect_equivalent(predict(fit, X, type="response")[,100], predict(fit.mle, type="response"))
