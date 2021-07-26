@@ -4,11 +4,15 @@ cv.grpreg <- function(X, y, group=1:ncol(X), ..., nfolds=10, seed, fold, returnY
   fit.args <- list(...)
   fit.args$X <- X
   fit.args$y <- y
-  fit.args$group <- group
+  if (!inherits(X, "expandedMatrix")) fit.args$group <- group
   fit.args$returnX <- TRUE
-  fit <- do.call("grpreg", fit.args)
+  if ('penalty' %in% names(fit.args) && fit.args$penalty == 'gBridge') {
+    fit <- do.call("gBridge", fit.args)
+  } else {
+    fit <- do.call("grpreg", fit.args)
+  }
 
-  # Get standardized X, y
+  # Get y, standardized X
   XG <- fit$XG
   X <- XG$X
   y <- fit$y
@@ -19,7 +23,6 @@ cv.grpreg <- function(X, y, group=1:ncol(X), ..., nfolds=10, seed, fold, returnY
   # Set up folds
   if (!missing(seed)) set.seed(seed)
   n <- length(y)
-  
   
   if (missing(fold)) {
     if (m > 1) {
@@ -86,7 +89,11 @@ cv.grpreg <- function(X, y, group=1:ncol(X), ..., nfolds=10, seed, fold, returnY
 cvf <- function(i, X, y, fold, cv.args) {
   cv.args$X <- X[fold!=i, , drop=FALSE]
   cv.args$y <- y[fold!=i]
-  fit.i <- do.call("grpreg", cv.args)
+  if ('penalty' %in% names(cv.args) && cv.args$penalty == 'gBridge') {
+    fit.i <- do.call("gBridge", cv.args)
+  } else {
+    fit.i <- do.call("grpreg", cv.args)
+  }
 
   X2 <- X[fold==i, , drop=FALSE]
   y2 <- y[fold==i]

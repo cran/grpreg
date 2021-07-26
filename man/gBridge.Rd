@@ -8,7 +8,7 @@
 gBridge(X, y, group=1:ncol(X), family=c("gaussian", "binomial",
 "poisson"), nlambda=100, lambda, lambda.min={if (nrow(X) > ncol(X)) .001
 else .05}, lambda.max, alpha=1, eps=.001, delta=1e-7, max.iter=10000,
-gamma=0.5, group.multiplier, warn=TRUE)
+gamma=0.5, group.multiplier, warn=TRUE, returnX=FALSE, ...)
 }
 \arguments{
   \item{X}{The design matrix, as in \code{grpreg}.}
@@ -26,7 +26,7 @@ gamma=0.5, group.multiplier, warn=TRUE)
     penalties in \code{grpreg}, it is not possible to solve for
     \code{lambda.max} directly with group bridge models.  Thus, it must
     be specified by the user.  If it is not specified, \code{gBridge}
-    will attempt a guess at \code{lambda.max}, but this is not
+    will attempt to guess \code{lambda.max}, but this is not
     particularly accurate.}
   \item{alpha}{Tuning parameter for the balance between the group
     penalty and the L2 penalty, as in \code{grpreg}.}
@@ -43,6 +43,9 @@ gamma=0.5, group.multiplier, warn=TRUE)
     group's penalty is to be multiplied, as in \code{grpreg}.}
   \item{warn}{Should the function give a warning if it fails to
     converge?  As in \code{grpreg}.}
+  \item{returnX}{Return the standardized design matrix (and associated
+    group structure information)?  Default is FALSE.}
+  \item{...}{Not used.}
 }
 \details{
   This method fits the group bridge method of Huang et al. (2009).
@@ -50,7 +53,7 @@ gamma=0.5, group.multiplier, warn=TRUE)
   differentiable at zero; because of this, a number of changes must be
   made to the algorithm, which is why it has its own function.  Most
   notably, the method is unable to start at \code{lambda.max}; it must
-  start at \code{lambda.max} and proceed in the opposite direction.
+  start at \code{lambda.min} and proceed in the opposite direction.
 
   In other respects, the usage and behavior of the function is similar
   to the rest of the \code{grpreg} package.
@@ -79,11 +82,11 @@ group <- Birthwt$group
 y <- Birthwt$bwt
 fit <- gBridge(X, y, group)
 plot(fit)
-select(fit)
+select(fit)$beta
 
 ## Logistic regression
 y <- Birthwt$low
 fit <- gBridge(X, y, group, family="binomial")
 plot(fit)
-select(fit)
+select(fit)$beta
 }
