@@ -1,3 +1,8 @@
+if (interactive()) library(tinytest)
+
+
+# Linear regression -------------------------------------------------------
+
 Data <- gen_nonlinear_data()
 y <- Data$y
 
@@ -25,8 +30,8 @@ XX <- gen_nonlinear_data(seed=2, n=20)$X
 expect_warning(P <- predict(fit, XX, type='link'))
 expect_equal(dim(P), c(20, length(fit$lambda)))
 P <- predict(fit, Data$X, type='link')
-L <- apply(grpreg:::loss.grpreg(y, P, 'gaussian'), 2, sum)
-expect_equivalent(L, fit$loss)
+L <- apply(grpreg:::deviance_grpreg(y, P, 'gaussian'), 2, sum)
+expect_equivalent(L, fit$deviance)
 PP <- predict(fit, Data$X, type='response')
 expect_equivalent(PP, P)
 COEF <- predict(fit, type='coefficients')
@@ -45,8 +50,8 @@ XX <- gen_nonlinear_data(seed=2, n=20)$X
 P <- predict(fit, XX, type='link')
 expect_equal(dim(P), c(20, length(fit$lambda)))
 P <- predict(fit, Data$X, type='link')
-L <- apply(grpreg:::loss.grpreg(y, P, 'gaussian'), 2, sum)
-expect_equivalent(L, fit$loss)
+L <- apply(grpreg:::deviance_grpreg(y, P, 'gaussian'), 2, sum)
+expect_equivalent(L, fit$deviance)
 PP <- predict(fit, Data$X, type='response')
 expect_equivalent(PP, P)
 COEF <- predict(fit, type='coefficients')
@@ -76,13 +81,12 @@ plot_spline(fit, 'V02', which=80, partial=TRUE, type='contrast')
 # Cross-validation
 cvfit <- cv.grpreg(Xn, y)
 expect_silent(plot_spline(cvfit, 'V02'))
-expect_warning(plot_spline(cvfit, 'V02', which=3))
+expect_warning(plot_spline(cvfit, 'V15', which=3))
 plot_spline(cvfit, 'V02', partial=TRUE, type='conditional')
 plot_spline(cvfit, 'V02', partial=TRUE, type='contrast')
 
 
 # Logistic regression -----------------------------------------------------
-
 
 Data <- gen_nonlinear_data(n=500)
 y <- Data$y > quantile(Data$y, 0.25)
@@ -106,8 +110,8 @@ XX[1,1] <- 1
 expect_warning(P <- predict(fit, XX, type='link'))
 expect_equal(dim(P), c(20, length(fit$lambda)))
 P <- predict(fit, Data$X, type='response')
-L <- apply(grpreg:::loss.grpreg(y, P, 'binomial'), 2, sum)
-expect_equivalent(L, fit$loss, tolerance=1e-5)
+L <- apply(grpreg:::deviance_grpreg(y, P, 'binomial'), 2, sum)
+expect_equivalent(L, fit$deviance, tolerance=1e-5)
 COEF <- predict(fit, type='coefficients')
 expect_equivalent(COEF, coef(fit))
 expect_inherits(predict(fit, type='vars', lambda=0.01), 'integer')
@@ -128,13 +132,12 @@ plot_spline(fit, 'V02', which=20, partial=TRUE, type='contrast')
 # Cross-validation
 cvfit <- cv.grpreg(Xn, y, family='binomial')
 expect_silent(plot_spline(cvfit, 'V02'))
-expect_warning(plot_spline(cvfit, 'V02', which=2))
+expect_warning(plot_spline(cvfit, 'V10', which=2))
 plot_spline(cvfit, 'V02', partial=TRUE, type='conditional')
 plot_spline(cvfit, 'V02', partial=TRUE, type='contrast')
 
 
 # Cox regression -----------------------------------------------------
-
 
 Data <- gen_nonlinear_data(n=500)
 y <- cbind(Data$y, rbinom(500, 1, 0.75))
@@ -158,8 +161,8 @@ XX[1,1] <- 1
 expect_warning(P <- predict(fit, XX, type='link'))
 expect_equal(dim(P), c(20, length(fit$lambda)))
 P <- predict(fit, Data$X, type='link')
-L <- apply(grpreg:::loss.grpsurv(y, P), 2, sum)
-expect_equivalent(L, fit$loss, tolerance=1e-5)
+L <- apply(grpreg:::deviance_grpsurv(y, P), 2, sum)
+expect_equivalent(L, fit$deviance, tolerance=1e-5)
 COEF <- predict(fit, type='coefficients')
 expect_equivalent(COEF, coef(fit))
 expect_inherits(predict(fit, type='vars', lambda=0.05), 'integer')

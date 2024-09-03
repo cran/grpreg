@@ -1,8 +1,8 @@
 Package: grpreg
 Title: Regularization Paths for Regression Models with Grouped
         Covariates
-Version: 3.4.0
-Date: 2021-07-22
+Version: 3.5.0
+Date: 2024-09-03
 Authors@R: c(
   person("Patrick", "Breheny", role=c("aut","cre"), email="patrick-breheny@uiowa.edu", comment=c(ORCID="0000-0002-0650-1119")),
   person("Yaohui", "Zeng", role="ctb"),
@@ -26,13 +26,13 @@ License: GPL-3
 URL: https://pbreheny.github.io/grpreg/,
         https://github.com/pbreheny/grpreg
 LazyData: TRUE
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.2
 Encoding: UTF-8
 NeedsCompilation: yes
-Packaged: 2021-07-26 16:29:43 UTC; pbreheny
+Packaged: 2024-09-03 15:37:26 UTC; pbreheny
 Author: Patrick Breheny [aut, cre] (<https://orcid.org/0000-0002-0650-1119>),
   Yaohui Zeng [ctb],
   Ryan Kurth [ctb]
 Maintainer: Patrick Breheny <patrick-breheny@uiowa.edu>
 Repository: CRAN
-Date/Publication: 2021-07-26 18:10:02 UTC
+Date/Publication: 2024-09-03 17:00:02 UTC

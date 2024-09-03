@@ -30,10 +30,12 @@
 #' @seealso [plot_spline()] to visualize the resulting nonlinear fits
 #'
 #' @examples
+#' \dontshow{set.seed(1)}
 #' Data <- gen_nonlinear_data(n=1000)
 #' X <- expand_spline(Data$X)
 #' fit <- grpreg(X, Data$y)
 #' plot_spline(fit, "V02", lambda = 0.03)
+#' @export
 
 expand_spline <- function(x, df = 3, degree = 3, type = c("ns", "bs")) {
   type <- match.arg(type)

@@ -14,9 +14,11 @@
 #'   * If `"contrast"`, the plot returned shows the effect on the linear predictor by moving the x variable away from its mean.
 #' @param warnings    If `FALSE`, warnings will be suppressed (default = `TRUE`).
 #' @param points.par  List of parameters (see [par()] to pass to [points()] when `partial=TRUE`.
+#' @param add         Add spline to existing plot? (default: FALSE)
 #' @param ...         Further arguments to be passed to `plot()`. Note that these arguments also control the appearance of the lines.
 #'
 #' @examples
+#' \dontshow{set.seed(1)}
 #' Data <- gen_nonlinear_data(n=1000)
 #' X <- expand_spline(Data$X)
 #' fit <- grpreg(X, Data$y)
@@ -34,9 +36,11 @@
 #' cvfit <- cv.grpreg(X, Data$y)
 #' plot_spline(cvfit, "V02")
 #' plot_spline(cvfit, "V02", partial=TRUE)
+#' @export plot_spline
 
 plot_spline <- function(fit, variable, lambda, which = NULL, partial = FALSE, 
-                           type = "contrast", warnings = TRUE, points.par = NULL, ...){
+                        type = "contrast", warnings = TRUE, points.par = NULL,
+                        add = FALSE, ...) {
   if (inherits(fit, "cv.grpreg")) {
     if (missing(lambda) & missing(which)) lambda <- fit$lambda.min
     fit <- fit$fit
@@ -132,7 +136,7 @@ plot_spline <- function(fit, variable, lambda, which = NULL, partial = FALSE,
     new.plot.args <- new.args[names(new.args) %in% c(names(par()), names(formals(plot.default)))]
     plot.args[names(new.plot.args)] <- new.plot.args
   }
-  do.call("matplot", plot.args)
+  if (!add) do.call("matplot", plot.args)
   if (partial == TRUE) {
     points.args <- list(x=meta$originalx[,i], y=parresid, pch=19, cex=0.8, col='gray')
     if (length(points.par)) {

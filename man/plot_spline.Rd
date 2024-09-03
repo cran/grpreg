@@ -13,6 +13,7 @@ plot_spline(
   type = "contrast",
   warnings = TRUE,
   points.par = NULL,
+  add = FALSE,
   ...
 )
 }
@@ -37,6 +38,8 @@ plot_spline(
 
 \item{points.par}{List of parameters (see \code{\link[=par]{par()}} to pass to \code{\link[=points]{points()}} when \code{partial=TRUE}.}
 
+\item{add}{Add spline to existing plot? (default: FALSE)}
+
 \item{...}{Further arguments to be passed to \code{plot()}. Note that these arguments also control the appearance of the lines.}
 }
 \description{
@@ -46,6 +49,7 @@ Plots a spline curve for a single variable using a \code{grpreg} or \code{cv.grp
 \code{plot_spline()} takes a model fit using both the \code{\link[=grpreg]{grpreg()}} and \code{\link[=expand_spline]{expand_spline()}} functions and plots a spline curve for a given variable.
 }
 \examples{
+\dontshow{set.seed(1)}
 Data <- gen_nonlinear_data(n=1000)
 X <- expand_spline(Data$X)
 fit <- grpreg(X, Data$y)
